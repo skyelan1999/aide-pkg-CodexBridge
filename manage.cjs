@@ -7,7 +7,7 @@ const { spawn, spawnSync } = require('node:child_process');
 const { randomBytes } = require('node:crypto');
 const root = __dirname;
 const { resolveLaunch } = require('./runtime/launch.cjs');
-const payload = ['manifest.json', 'index.js', 'config.example.json', 'manage.cjs', 'README.md', 'runtime/bridge.cjs', 'runtime/launch.cjs', 'viewer.html', 'LICENSE', 'get-key.cmd', 'get-key.command', 'get-key.sh', 'install.cmd', 'start.cmd', 'install.sh', 'start.sh', 'install.command', 'start.command'];
+const payload = ['manifest.json', 'index.js', 'config.example.json', 'manage.cjs', 'README.md', 'runtime/bridge.cjs', 'runtime/launch.cjs', 'viewer.html', 'LICENSE', 'uninstall.cmd', 'uninstall.command', 'uninstall.sh', 'get-key.cmd', 'get-key.command', 'get-key.sh', 'install.cmd', 'start.cmd', 'install.sh', 'start.sh', 'install.command', 'start.command'];
 function defaultTarget(platform = process.platform, env = process.env, home = os.homedir()) {
   if (platform === 'win32') return path.win32.join(env.LOCALAPPDATA || path.win32.join(home, 'AppData', 'Local'), 'aide-codex-bridge');
   if (platform === 'darwin') return path.posix.join(home, 'Library', 'Application Support', 'aide-codex-bridge');
@@ -15,6 +15,7 @@ function defaultTarget(platform = process.platform, env = process.env, home = os
 }
 function install(target) {
   target = path.resolve(target);
+  if (fs.existsSync(path.join(target, ".aide-codex-bridge"))) assertStopped(target);
   if (fs.existsSync(target) && fs.readdirSync(target).length && !fs.existsSync(path.join(target, '.aide-codex-bridge'))) throw new Error('目标目录非空且不是本组件安装目录 / Target is not a bridge installation');
   fs.mkdirSync(target, { recursive: true, mode: 0o700 });
   if (fs.lstatSync(target).isSymbolicLink()) throw Error('Install target must not be a symbolic link');
@@ -47,7 +48,7 @@ function keyHelp(target, platform = process.platform) {
 }
 function readInstalledKey(target) {
   const candidates = target ? [path.resolve(target)] : [root, defaultTarget()];
-  const installed = candidates.find(p => fs.existsSync(path.join(p, '.aide-codex-bridge')));
+  const installed = candidates.find(p => fs.existsSync(path.join(p, '.aide-codex-bridge')) && fs.existsSync(path.join(p, 'manage.cjs')));
   if (!installed) throw Error('Host bridge is not installed / 宿主桥接尚未安装。Extract the ZIP and run install.cmd (Windows), sh install.command (macOS), or sh install.sh (Linux). Importing only the Aide plugin is not host installation.');
   const file = path.join(installed, 'data', 'bridge.key');
   if (!fs.existsSync(file)) throw Error('Installed bridge key is missing; rerun the installer / 桥接密钥缺失，请重新运行安装器。');
@@ -57,7 +58,47 @@ function readInstalledKey(target) {
   return value;
 }
 
+function assertStopped(directory) {
+  if (fs.existsSync(directory) && fs.lstatSync(directory).isSymbolicLink()) throw Error('Refuse symbolic link installation');
+  const data = path.join(directory, 'data');
+  if (fs.existsSync(data) && fs.lstatSync(data).isSymbolicLink()) throw Error('Refuse symbolic link data directory');
+  const file = path.join(directory, 'data', 'manager.pid');
+  if (!fs.existsSync(file)) return;
+  if (fs.lstatSync(file).isSymbolicLink()) throw Error('Refuse symbolic link PID record');
+  const pid = Number(fs.readFileSync(file, 'utf8').trim());
+  if (!Number.isInteger(pid) || pid < 1) throw Error('Invalid runtime PID record; verify the host service is stopped first');
+  try { process.kill(pid, 0); } catch (e) {
+    if (e.code === 'ESRCH') { fs.unlinkSync(file); return; }
+    throw Error('Cannot verify host service state; stop it in its terminal before continuing');
+  }
+  throw Error('Host bridge is running. Press Ctrl+C in its terminal before install/uninstall / 请先在运行终端按 Ctrl+C 停止桥接。');
+}
+function uninstall(target) {
+  const directory = path.resolve(target || (fs.existsSync(path.join(root, '.aide-codex-bridge')) ? root : defaultTarget()));
+  if (!fs.existsSync(path.join(directory, '.aide-codex-bridge')) || fs.lstatSync(directory).isSymbolicLink()) throw Error('Not a marked bridge installation / 此目录不是本组件安装目录');
+  assertStopped(directory);
+  // Validate the full allowlist before touching anything. Never recursively delete a user directory.
+  for (const name of payload) {
+    const file = path.join(directory, name);
+    if (fs.existsSync(path.dirname(file)) && fs.lstatSync(path.dirname(file)).isSymbolicLink()) throw Error('Refuse symbolic link installation path');
+    if (fs.existsSync(file) && !fs.lstatSync(file).isFile()) throw Error('Refuse non-file installation entry');
+    if (fs.existsSync(file) && fs.lstatSync(file).isSymbolicLink()) throw Error('Refuse symbolic link installation entry');
+  }
+  for (const name of payload) {
+    const file = path.join(directory, name);
+    if (fs.existsSync(file)) fs.unlinkSync(file);
+  }
+  const runtime = path.join(directory, 'runtime');
+  if (fs.existsSync(runtime) && fs.readdirSync(runtime).length === 0) fs.rmdirSync(runtime);
+  fs.writeFileSync(path.join(directory, '.aide-codex-bridge'), 'settings-retained\n');
+  console.log('Host bridge program files removed / 宿主桥接程序已卸载。\nConfiguration and bridge key retained / 配置和密钥保留于: '+directory+'\nCodex CLI, account login and Aide plugin are unchanged. Remove the Aide plugin separately in Plugins → Installed.');
+}
 function start() {
+  if (!fs.existsSync(path.join(root, '.aide-codex-bridge'))) throw Error('Install the host component first / 请先安装宿主组件');
+  assertStopped(root);
+  const pidFile = path.join(root, 'data', 'manager.pid');
+  fs.writeFileSync(pidFile, String(process.pid), {flag:'wx',mode:0o600});
+  process.on('exit', () => { try { if (fs.readFileSync(pidFile,'utf8').trim() === String(process.pid)) fs.unlinkSync(pidFile); } catch {} });
   const c = JSON.parse(fs.readFileSync(path.join(root, 'config.json'), 'utf8'));
   const args = [path.join(root, 'runtime', 'bridge.cjs'), '--host', c.host, '--port', String(c.port), '--concurrency', String(c.concurrency), '--max-queue', String(c.maxQueue), '--queue-timeout-ms', String(c.queueTimeoutMs), '--key-file', ensureKey(root), '--codex', c.codex];
   if (c.proxy) args.push('--proxy', c.proxy);
@@ -82,9 +123,10 @@ if (require.main === module) {
       case 'install': install(process.argv[3] || defaultTarget()); break;
       case 'start': start(); break;
       case 'doctor': doctor(); break;
+      case 'uninstall': uninstall(process.argv[3]); break;
       case 'key': console.log(readInstalledKey(process.argv[3])); break;
-      default: console.log('node manage.cjs install [target-directory] | start | doctor | key');
+      default: console.log('node manage.cjs install [target-directory] | start | doctor | key [target-directory] | uninstall [target-directory]');
     }
   } catch (error) { console.error(error.message); process.exitCode = 1; }
 }
-module.exports = { install, defaultTarget, payload, readInstalledKey, keyHelp };
+module.exports = { install, defaultTarget, payload, readInstalledKey, keyHelp, uninstall, assertStopped };

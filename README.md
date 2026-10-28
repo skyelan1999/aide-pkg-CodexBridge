@@ -96,6 +96,20 @@ node "${XDG_DATA_HOME:-$HOME/.local/share}/aide-codex-bridge/manage.cjs" key
 
 自选安装目录：运行该目录的 `get-key` 入口，或 `node manage.cjs key "实际安装目录"`。取密钥不会在未安装的解压目录偷偷创建另一个密钥；未安装时会明确提示先安装。安装器会打印适合当前系统的完整取密钥命令。输出只填写到 Aide 模型提供商 API Key / 插件可选诊断密钥，不发到聊天里。The bridge key is generated locally; it is not your Codex login token.
 
+## 插件内安装与卸载 / Lifecycle workbench
+
+打开插件工作台 → **如何使用**，选择运行 Codex 的宿主系统，再选择 **安装宿主组件 / 获取密钥 / 启动 / 停止 / 卸载宿主组件**。每一步展示该系统可直接执行的命令、前提条件和验证方式。默认系统仅按浏览器设备提示；远程/Docker场景请自己选择真正的 Codex 宿主系统。页面不具备跨 Docker 操作宿主机的权限，不会假装自动安装或自动卸载。需要在宿主终端执行所示命令。
+
+| 系统 | 卸载宿主组件（先停止） |
+| --- | --- |
+| Windows | 安装目录运行 `uninstall.cmd` |
+| macOS | 安装目录运行 `sh uninstall.command` |
+| Linux | 安装目录运行 `sh uninstall.sh` |
+
+也可从解压包执行 `node manage.cjs uninstall "实际安装目录"`。卸载只删除明确清单中的本组件程序文件，**保留配置、桥接密钥和目录标记**；不会递归删除用户目录、未知文件、Node、Codex CLI 或 Codex 登录数据。重新运行安装器会恢复程序并沿用原密钥。新版本由 start 入口启动时记录 PID；运行中的实例拒绝升级/卸载。旧版本或手工启动的实例也必须先在原终端 Ctrl+C 停止。若要彻底清除保留数据，先确认路径及备份，再自行删除保留目录。
+
+**卸载 Aide 插件本身**：Aide → 插件 → 已安装 → Codex Bridge → 卸载。它和宿主服务是两部分，移除其中之一不会自动停止/删除另一部分。可用工作台“检查连接”核验服务是否停止；连接可达不等于插件已安装或模型已验收。
+
 ## Capabilities and limits
 
 - `GET /health`: minimal unauthenticated service identity/version; not a login or inference check.
@@ -117,7 +131,7 @@ python scripts/package-codex-bridge.py --out dist
 node --test scripts/*.test.cjs
 ```
 
-The deterministic 18-file plugin ZIP uses an explicit allowlist. It contains host launchers/runtime but no binaries, local config, auth, keys or test evidence. Run the generated ZIP through Aide's normal plugin validation before distributing.
+The deterministic 21-file plugin ZIP uses an explicit allowlist. It contains host launchers/runtime but no binaries, local config, auth, keys or test evidence. Run the generated ZIP through Aide's normal plugin validation before distributing.
 
 ```sh
 # Real host catalog only, no inference
