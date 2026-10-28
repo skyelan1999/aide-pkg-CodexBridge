@@ -3,7 +3,7 @@
 import argparse,os,pathlib,subprocess,zipfile,tarfile,io,json,hashlib,shutil
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 def build(target,arch,out):
- version=json.loads((ROOT/'manifest.json').read_text())['version']
+ version=json.loads((ROOT/'manifest.json').read_text(encoding='utf-8'))['version']
  payload=ROOT/'dist'/f'codex-bridge-{version}.zip'
  if not payload.is_file():raise RuntimeError('Build plugin package first')
  embedded=ROOT/'cmd/host-manager/payload.zip'
@@ -31,6 +31,6 @@ def build(target,arch,out):
   with tarfile.open(archive,'w:gz') as t:
    for path,(raw,mode) in sorted(files.items()):
     i=tarfile.TarInfo(path);i.size=len(raw);i.mode=mode;i.mtime=0;t.addfile(i,io.BytesIO(raw))
- sha=hashlib.sha256(archive.read_bytes()).hexdigest();archive.with_name(archive.name+'.sha256').write_text(sha+'  '+archive.name+'\n');print(json.dumps({'archive':str(archive),'sha256':sha,'bytes':archive.stat().st_size}))
+ sha=hashlib.sha256(archive.read_bytes()).hexdigest();archive.with_name(archive.name+'.sha256').write_text(sha+'  '+archive.name+'\n',encoding='utf-8');print(json.dumps({'archive':str(archive),'sha256':sha,'bytes':archive.stat().st_size}))
 if __name__=='__main__':
  p=argparse.ArgumentParser();p.add_argument('--os',choices=['darwin','windows','linux'],required=True);p.add_argument('--arch',choices=['amd64','arm64'],required=True);p.add_argument('--out',type=pathlib.Path,default=ROOT/'dist/managers');a=p.parse_args();build(a.os,a.arch,a.out.resolve())
