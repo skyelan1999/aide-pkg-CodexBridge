@@ -15,3 +15,7 @@ The workbench now includes a Codex-host OS selector and separate install, key, s
 Added allowlisted host uninstallers for all three systems. Uninstall retains config/key/marker and unrelated files; reinstall restores program files with the same key. New start launchers record a PID; install/uninstall refuse a known running manager. Users must also manually stop legacy/directly launched instances. Local test count is now 32, including actual macOS uninstall/reinstall and state-preservation checks.
 
 User subsequently authorized publishing 0.1.1 and updating the public market after verification. No Aide core or 9999 changes are needed.
+
+## Installed-workbench acceptance
+
+The 21-file candidate ZIP installed/upgraded in the isolated labelled Aide fixture. Both native diagnostic tools passed. Browser checks switched Windows/macOS/Linux, install/key/uninstall modes and English/Chinese; command paths and data-retention messages were visibly correct. Screenshot: `docs/evidence/workbench-0.1.1.png`. No real key was shown in the browser, uploaded or logged.
