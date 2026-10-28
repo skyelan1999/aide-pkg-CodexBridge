@@ -2,7 +2,20 @@
 
 An independent Aide plugin and optional local host service. Connect an installed, signed-in Codex CLI to Aide's **OpenAI-compatible Chat Completions** provider. No Aide core changes, Codex binaries, account tokens or user chat histories are bundled.
 
-独立插件 + 宿主机服务，把本机 Codex 接入 Aide 模型提供商。支持 Windows、macOS、Linux 的安装与启动入口；无需 PowerShell。插件自己的版本为 **0.1.2**，不随 Aide RC 号命名。
+独立插件 + 宿主机服务，把本机 Codex 接入 Aide 模型提供商。支持 Windows、macOS、Linux 的安装与启动入口；无需 PowerShell。插件自己的版本为 **0.2.0**，不随 Aide RC 号命名。
+
+## Graphical setup / 无终端安装与日常操作
+
+1. From [Release 0.2.0](https://github.com/skyelan1999/aide-pkg-CodexBridge/releases/tag/v0.2.0), download the native **manager** matching the Codex host OS and CPU. macOS: unzip and copy **Codex Bridge Manager.app** to Applications; Windows: unzip and run **CodexBridgeManager.exe**; Linux: extract the archive and launch the executable from the graphical desktop. Complete any normal OS approval for this unsigned preview; do not disable OS protections.
+2. The manager opens a local setup page. Click **Install/update**, then **Start**. Node.js 18+ and a previously installed/signed-in Codex CLI are prerequisites. The standalone manager binary does not need Node merely to open its setup page. It does not install Node/Codex, log into accounts or add a startup task. An older bridge started outside the manager must be closed once before takeover; it is never killed automatically.
+3. Copy the **manager key** from the native setup page into Aide → Codex Bridge → Settings → **Manager pairing key**. Use `http://host.docker.internal:8788` for Docker Desktop or `http://127.0.0.1:8788` for native Aide. This is a separate administration credential, not the model API key; do not paste it into chat. After pairing, the plugin's buttons actually install/update, start, stop, restart, diagnose, repair permissions and uninstall the owned bridge.
+4. For model-provider setup, copy the separate **model API key** from the native setup page. Configure Aide's model provider and fetch models as before. Provider settings are never overwritten automatically.
+
+中文：首次下载原生管理器并双击 → 图形页面点“安装／更新”和“启动” → 将管理密钥在插件设置里配对一次。之后日常维护直接用插件工作台按钮，无需输入 Shell 命令。管理器是独立常驻进程，停止推理桥接后仍可再次启动；点原生页面“退出管理器”会停止它管理的桥接并退出。卸载按钮仅移除桥接程序，保留配置、模型密钥和独立管理器，便于重新安装。
+
+管理器仅监听本机回环，不自动改防火墙或提供商。Linux Docker 需使用管理员配置的宿主网络或受控本地转发；`host-gateway` 名称映射本身不会让容器访问宿主回环监听。图形页面与插件按钮不会暴露任意命令执行或自选文件写入接口。Windows 使用参数数组和原生进程树终止，不使用 PowerShell。
+
+The manager holds a separate pairing key in the user's profile; POSIX files use 0600 under a 0700 directory, Windows relies on the user's profile ACL. It controls only a fixed installation directory and fixed operations. It is not an OS sandbox against other programs running as the same account. The manager key grants lifecycle authority; enable the plugin and pair only with a trusted local Aide backend. No arbitrary command/path or remote URL is accepted by the lifecycle tool. Keep the manager open while using plugin controls. Manual shell launchers remain an advanced fallback below.
 
 ## Architecture / 编排
 

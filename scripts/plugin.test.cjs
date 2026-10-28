@@ -9,3 +9,13 @@ test('connection check and authenticated catalog never echo keys',async t=>{
  const status=JSON.parse(await tools.codex_bridge_connection_info.handler());assert.equal(status.verifiedBridge,true);assert.equal(auth,undefined);
  const result=await tools.codex_bridge_models.handler();assert.equal(auth,'Bearer not-a-real-key');assert.equal(result.includes('not-a-real-key'),false);assert.deepEqual(JSON.parse(result).models,[{id:'fake-model'}]);
 });
+
+test('manager tools accept only paired fixed actions and never forward key/provider data',async t=>{
+ const {managerURL}=require('../index.js');
+ for(const u of ['http://example.com:8788','http://user:pass@localhost:8788','http://localhost:8788/path','http://localhost:8788?key=x'])assert.throws(()=>managerURL(u));
+ const http=require('node:http'),secret='a'.repeat(64);let calls=0;
+ const server=http.createServer((q,r)=>{assert.equal(q.headers.authorization,'Bearer '+secret);calls++;let body='';q.on('data',x=>body+=x);q.on('end',()=>{if(q.method==='POST')assert.deepEqual(JSON.parse(body),{action:'doctor'});r.end(JSON.stringify({service:'aide-codex-bridge-manager',version:'0.2.0',installed:true,controlKey:secret,bridgeKey:'must-not-return',lastError:secret,codexFound:{key:secret}}));});});await new Promise(r=>server.listen(0,'127.0.0.1',r));t.after(()=>{server.closeAllConnections();server.close()});const tools={};require('../index.js').apply({settings:{managerURL:'http://127.0.0.1:'+server.address().port,managerKey:secret},tool:x=>tools[x.name]=x});
+ const result=await tools.codex_bridge_host_action.handler({action:'doctor'});assert.equal(result.includes(secret),false);assert.equal(result.includes('must-not-return'),false);
+ assert.throws(()=>tools.codex_bridge_host_action.handler({action:'shell',command:'id'}));assert.throws(()=>tools.codex_bridge_host_action.handler({action:'start',path:'/etc'}));
+ await tools.codex_bridge_manager_status.handler();assert.equal(calls,2);
+});

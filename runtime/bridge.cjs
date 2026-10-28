@@ -93,7 +93,7 @@ class CodexRPC {
   }
   async initialize() {
     await this.call('initialize', {
-      clientInfo: { name: 'aide_codex_bridge', title: 'Aide Codex Bridge', version: '0.1.2' },
+      clientInfo: { name: 'aide_codex_bridge', title: 'Aide Codex Bridge', version: '0.2.0' },
       capabilities: { experimentalApi: true },
     });
     this.send({ method: 'initialized', params: {} });
@@ -208,7 +208,7 @@ function createServer(options) {
     const json = (status, value) => { res.writeHead(status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(value)); };
     const sse = value => res.write('data: ' + JSON.stringify(value) + '\n\n');
     try {
-      if (req.method === 'GET' && req.url === '/health') return json(200, {service:'aide-codex-bridge',version:'0.1.2'});
+      if (req.method === 'GET' && req.url === '/health') return json(200, {service:'aide-codex-bridge',version:'0.2.0'});
       const given = Buffer.from(req.headers.authorization || '');
       const expected = Buffer.from('Bearer ' + options.key);
       if (given.length !== expected.length || !timingSafeEqual(given, expected)) return json(401, { error: { message: 'Invalid bridge key', type: 'authentication_error' } });

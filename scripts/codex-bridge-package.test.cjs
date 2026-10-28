@@ -36,7 +36,7 @@ test('refuse to overwrite unrelated nonempty directory', () => {
 test('aide plugin declares executable diagnostic; has password-only diagnostic key and bounded local URL', async () => {
   const manifest = JSON.parse(fs.readFileSync(path.join(bundle, 'manifest.json')));
   assert.equal(manifest.id, 'codex-bridge');
-  assert.deepEqual(Object.keys(manifest.settingsSchema.properties), ['baseURL', 'bridgeKey']);
+  assert.deepEqual(Object.keys(manifest.settingsSchema.properties), ['baseURL', 'bridgeKey', 'managerURL', 'managerKey']);
   assert.equal(manifest.settingsSchema.properties.bridgeKey.format, 'password');
   let tool;
   require(path.join(bundle, 'index.js')).apply({ settings: { baseURL: 'file:///invalid' }, tool(def) { if(def.name==='codex_bridge_connection_info') tool = def; } });

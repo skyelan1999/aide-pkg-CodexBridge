@@ -5,3 +5,4 @@ config.json
 data/
 *.log
 .DS_Store
+/cmd/host-manager/payload.zip
