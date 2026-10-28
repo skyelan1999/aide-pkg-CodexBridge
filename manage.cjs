@@ -92,7 +92,7 @@ function uninstall(target, options = {}) {
   const runtime = path.join(directory, 'runtime');
   if (fs.existsSync(runtime) && fs.readdirSync(runtime).length === 0) fs.rmdirSync(runtime);
   fs.writeFileSync(path.join(directory, '.aide-codex-bridge'), 'settings-retained\n');
-  console.log('Host bridge program files removed / 宿主桥接程序已卸载。\nConfiguration and bridge key retained / 配置和密钥保留于: '+directory+'\nCodex CLI, account login and Aide plugin are unchanged. Remove the Aide plugin separately in Plugins → Installed.');
+  console.log('Host bridge program files removed / 宿主桥接程序已卸载。\nConfiguration, bridge key and any active Windows uninstall launcher retained / 配置、密钥及当前 Windows 卸载入口保留于: '+directory+'\nCodex CLI, account login and Aide plugin are unchanged. Remove the Aide plugin separately in Plugins → Installed.');
 }
 function start() {
   if (!fs.existsSync(path.join(root, '.aide-codex-bridge'))) throw Error('Install the host component first / 请先安装宿主组件');
