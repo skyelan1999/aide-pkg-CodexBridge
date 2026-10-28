@@ -205,13 +205,22 @@ func (m *manager) externalRunning() bool {
 	if m.probe != nil {
 		return m.probe()
 	}
-	client := &http.Client{Timeout: time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
-	r, e := client.Get("http://127.0.0.1:8787/health")
-	if e != nil {
-		return false
+	port := 8787
+	if d, e := m.config(); e == nil {
+		if n, ok := d["port"].(float64); ok && n >= 1 && n <= 65535 && n == float64(int(n)) {
+			port = int(n)
+		}
 	}
-	r.Body.Close()
-	return true
+	// Any listener occupies the configured port, including a custom or IPv6 bridge.
+	// Do not overwrite a running installation merely because /health is unavailable.
+	for _, host := range []string{"127.0.0.1", "::1"} {
+		c, e := net.DialTimeout("tcp", net.JoinHostPort(host, strconv.Itoa(port)), 250*time.Millisecond)
+		if e == nil {
+			c.Close()
+			return true
+		}
+	}
+	return false
 }
 func (m *manager) install() error {
 	if m.externalRunning() {

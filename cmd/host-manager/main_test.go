@@ -306,3 +306,37 @@ func TestQuitRequiresOwnerUIAndRejectsFurtherActions(t *testing.T) {
 		t.Fatal(w.Code)
 	}
 }
+
+func TestExternalCustomPortBlocksMutation(t *testing.T) {
+	m := fixture(t)
+	if e := m.install(); e != nil {
+		t.Fatal(e)
+	}
+	listener, e := net.Listen("tcp", "127.0.0.1:0")
+	if e != nil {
+		t.Fatal(e)
+	}
+	defer listener.Close()
+	d, e := m.config()
+	if e != nil {
+		t.Fatal(e)
+	}
+	d["port"] = listener.Addr().(*net.TCPAddr).Port
+	b, _ := json.Marshal(d)
+	if e = atomic(filepath.Join(m.root, "config.json"), b, 0600); e != nil {
+		t.Fatal(e)
+	}
+	m.probe = nil
+	if !m.externalRunning() {
+		t.Fatal("custom-port listener missed")
+	}
+	if e = m.install(); e == nil {
+		t.Fatal("updated occupied bridge")
+	}
+	if e = m.uninstall(); e == nil {
+		t.Fatal("removed occupied bridge")
+	}
+	if e = m.stop(); e == nil {
+		t.Fatal("attempted external stop")
+	}
+}
