@@ -2,7 +2,7 @@
 
 An independent Aide plugin and optional local host service. Connect an installed, signed-in Codex CLI to Aide's **OpenAI-compatible Chat Completions** provider. No Aide core changes, Codex binaries, account tokens or user chat histories are bundled.
 
-独立插件 + 宿主机服务，把本机 Codex 接入 Aide 模型提供商。支持 Windows、macOS、Linux 的安装与启动入口；无需 PowerShell。插件自己的版本为 **0.1.1**，不随 Aide RC 号命名。
+独立插件 + 宿主机服务，把本机 Codex 接入 Aide 模型提供商。支持 Windows、macOS、Linux 的安装与启动入口；无需 PowerShell。插件自己的版本为 **0.1.2**，不随 Aide RC 号命名。
 
 ## Architecture / 编排
 
@@ -47,6 +47,25 @@ Command-line alternative on all three: `node manage.cjs install "target director
 | Model | An ID from the authenticated catalog; test actual access with a short request |
 
 中文：解压安装包 → 宿主机登录 Codex → 安装并启动桥接 → 在 Aide 导入同一 ZIP → 打开工作台检查连接 → 单独配置 Aide 模型提供商的地址、密钥与模型。不会继承 Codex 桌面正在进行的聊天。
+
+### macOS/Linux launcher permissions / 启动权限修复
+
+If double-clicking a `.command` file says you do not have permission, open Terminal in the **extracted plugin directory** and run:
+
+```sh
+node manage.cjs repair-permissions
+sh install.command
+```
+
+Linux uses `sh install.sh` for the second command. Shell invocation does not require the script's executable bit. After host installation, repair an existing default macOS installation with:
+
+```sh
+node "$HOME/Library/Application Support/aide-codex-bridge/manage.cjs" repair-permissions
+```
+
+中文：ZIP 自带执行位，但插件导入、同步或部分解压工具可能把 `.command` 写成普通只读脚本。先进入解压目录运行修复命令，或直接 `sh install.command`。该命令仅将本组件八个 `.sh`/`.command` 入口恢复为 `0755`；先检查完整白名单，拒绝符号链接，不修改配置、密钥、其他文件或系统隔离标记，也不启动服务。自选安装目录可运行 `node manage.cjs repair-permissions "实际安装目录"`。如果是系统阻止打开、目录写入失败或 Codex 登录权限错误，请保留完整报错另行排查，不能把它们都当作执行位丢失。
+
+The repair command validates the complete launcher allowlist before changing modes. It does not run the bridge, change credentials/firewall settings or remove OS quarantine. It is not a remedy for every permissions or account error. Importing the plugin alone still does not install the host service.
 
 ### Docker and network access
 
