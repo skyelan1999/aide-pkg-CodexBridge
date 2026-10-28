@@ -10,8 +10,8 @@ const { resolveLaunch } = require('./runtime/launch.cjs');
 const payload = ['manifest.json', 'index.js', 'config.example.json', 'manage.cjs', 'README.md', 'runtime/bridge.cjs', 'runtime/launch.cjs', 'viewer.html', 'LICENSE', 'install.cmd', 'start.cmd', 'install.sh', 'start.sh', 'install.command', 'start.command'];
 function defaultTarget(platform = process.platform, env = process.env, home = os.homedir()) {
   if (platform === 'win32') return path.win32.join(env.LOCALAPPDATA || path.win32.join(home, 'AppData', 'Local'), 'aide-codex-bridge');
-  if (platform === 'darwin') return path.join(home, 'Library', 'Application Support', 'aide-codex-bridge');
-  return path.join(env.XDG_DATA_HOME || path.join(home, '.local', 'share'), 'aide-codex-bridge');
+  if (platform === 'darwin') return path.posix.join(home, 'Library', 'Application Support', 'aide-codex-bridge');
+  return path.posix.join(env.XDG_DATA_HOME || path.posix.join(home, '.local', 'share'), 'aide-codex-bridge');
 }
 function install(target) {
   target = path.resolve(target);
