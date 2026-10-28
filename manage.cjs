@@ -73,7 +73,7 @@ function assertStopped(directory) {
   }
   throw Error('Host bridge is running. Press Ctrl+C in its terminal before install/uninstall / 请先在运行终端按 Ctrl+C 停止桥接。');
 }
-function uninstall(target) {
+function uninstall(target, options = {}) {
   const directory = path.resolve(target || (fs.existsSync(path.join(root, '.aide-codex-bridge')) ? root : defaultTarget()));
   if (!fs.existsSync(path.join(directory, '.aide-codex-bridge')) || fs.lstatSync(directory).isSymbolicLink()) throw Error('Not a marked bridge installation / 此目录不是本组件安装目录');
   assertStopped(directory);
@@ -85,6 +85,7 @@ function uninstall(target) {
     if (fs.existsSync(file) && fs.lstatSync(file).isSymbolicLink()) throw Error('Refuse symbolic link installation entry');
   }
   for (const name of payload) {
+    if (options.keepLauncher && process.platform === 'win32' && name === 'uninstall.cmd') continue;
     const file = path.join(directory, name);
     if (fs.existsSync(file)) fs.unlinkSync(file);
   }
@@ -123,7 +124,7 @@ if (require.main === module) {
       case 'install': install(process.argv[3] || defaultTarget()); break;
       case 'start': start(); break;
       case 'doctor': doctor(); break;
-      case 'uninstall': uninstall(process.argv[3]); break;
+      case 'uninstall': uninstall(process.argv[3]?.startsWith('--') ? undefined : process.argv[3], {keepLauncher:process.argv.includes('--keep-launcher')}); break;
       case 'key': console.log(readInstalledKey(process.argv[3])); break;
       default: console.log('node manage.cjs install [target-directory] | start | doctor | key [target-directory] | uninstall [target-directory]');
     }

@@ -1,8 +1,9 @@
 @echo off
-setlocal EnableDelayedExpansion
-(
-  node "%~dp0manage.cjs" uninstall
-  set "BRIDGE_UNINSTALL_RESULT=!ERRORLEVEL!"
+node "%~dp0manage.cjs" uninstall --keep-launcher
+if errorlevel 1 (
   pause
-  exit /b !BRIDGE_UNINSTALL_RESULT!
+  exit /b 1
 )
+echo.
+pause
+del "%~f0" & exit /b 0

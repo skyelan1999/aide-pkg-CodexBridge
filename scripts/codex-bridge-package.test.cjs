@@ -87,7 +87,7 @@ test('uninstall refuses active runtime and preserves key/config/unknown files ac
   assert.notEqual(execute('install',directory).status,0);fs.unlinkSync(pid);
   if(process.platform==='win32')r=spawnSync(process.env.ComSpec||'cmd.exe',['/d','/c','uninstall.cmd'],{cwd:directory,encoding:'utf8',input:'\n'});
   else r=spawnSync('sh',[path.join(directory,process.platform==='darwin'?'uninstall.command':'uninstall.sh')],{encoding:'utf8'});
-  assert.equal(r.status,0,r.stderr);assert.equal(fs.existsSync(path.join(directory,'manage.cjs')),false);
+  assert.equal(r.status,0,r.stderr);assert.equal(fs.existsSync(path.join(directory,'manage.cjs')),false);assert.equal(fs.existsSync(path.join(directory,'uninstall.cmd')),false);
   assert.equal(fs.readFileSync(keyFile,'utf8'),key);assert.equal(fs.readFileSync(configFile,'utf8'),config);
   assert.equal(fs.readFileSync(path.join(directory,'keep-note.txt'),'utf8'),'unrelated user file');
   r=execute('install',directory);assert.equal(r.status,0,r.stderr);assert.equal(execute('key',directory).stdout.trim(),key.trim());
