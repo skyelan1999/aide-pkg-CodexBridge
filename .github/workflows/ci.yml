@@ -29,3 +29,57 @@ jobs:
       - run: python scripts/package-codex-bridge.py --out dist
       - run: node --test scripts/codex-openai-bridge.test.cjs scripts/codex-bridge-package.test.cjs scripts/platform.test.cjs scripts/plugin.test.cjs
       - run: git diff --exit-code
+
+  manager:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-2022, macos-15, ubuntu-22.04]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.0'
+          cache: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: node scripts/build.cjs
+      - run: python scripts/package-codex-bridge.py --out dist
+      - name: Test actual manager and subprocess lifecycle
+        run: |
+          cp dist/codex-bridge-0.2.0.zip cmd/host-manager/payload.zip
+          cd cmd/host-manager
+          if [ "${{ runner.os }}" = Windows ]; then
+            go test -v ./...
+          else
+            go test -race -v ./...
+          fi
+          go vet ./...
+      - name: Build both architectures and run native executable
+        run: |
+          case "${{ runner.os }}" in
+            Windows) target=windows ;;
+            macOS) target=darwin ;;
+            Linux) target=linux ;;
+          esac
+          python scripts/build-host-manager.py --os "$target" --arch amd64
+          python scripts/build-host-manager.py --os "$target" --arch arm64
+          arch=$(go env GOARCH)
+          if [ "$target" = windows ]; then
+            ./dist/managers/$target-$arch-CodexBridgeManager.exe --version
+          else
+            ./dist/managers/$target-$arch-CodexBridgeManager --version
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: host-manager-${{ runner.os }}
+          path: |
+            dist/managers/*.zip
+            dist/managers/*.tar.gz
+            dist/managers/*.sha256
+      - run: git diff --exit-code
