@@ -15,6 +15,16 @@ const {createServer}=require('../runtime/bridge.cjs');
  const v=JSON.parse(await call({}));if(v.choices[0].message.content.trim()!=='BRIDGE_OK')throw Error('Unexpected test response');
  const stream=await call({stream:true});let text='',done=false; for(const line of stream.split('\n')) { if(line==='data: [DONE]'){done=true;continue;} if(!line.startsWith('data: '))continue; const event=JSON.parse(line.slice(6));if(event.error)throw Error('SSE: '+event.error.message);text+=event.choices?.[0]?.delta?.content||''; } if(!done||text.trim()!=='BRIDGE_OK')throw Error('SSE test failed: incomplete or unexpected text');
  receipt.inference=true;receipt.model=model;receipt.json=true;receipt.sse=true;console.log('Live JSON and SSE PASS:',model);
+ if(process.argv.includes('--tools')){
+ const messages=[{role:'user',content:'Call lookup with q="bridge". After receiving its result reply exactly TOOL_OK.'}];
+ const tools=[{type:'function',function:{name:'lookup',description:'Synthetic lookup; Aide test client supplies the result.',parameters:{type:'object',properties:{q:{type:'string'}},required:['q'],additionalProperties:false}}}];
+ const first=JSON.parse(await call({messages,tools})).choices[0];const tool=first.message.tool_calls?.[0];
+ if(first.finish_reason!=='tool_calls'||tool?.function.name!=='lookup'||JSON.parse(tool.function.arguments).q!=='bridge')throw Error('Live tool handoff failed');
+ messages.push(first.message,{role:'tool',tool_call_id:tool.id,content:'lookup succeeded'});
+ const second=JSON.parse(await call({messages,tools,tool_choice:'none'})).choices[0];if(second.message.content?.trim()!=='TOOL_OK')throw Error('Live tool history replay failed');
+ receipt.toolRoundTrip=true;console.log('Live dynamic tool handoff and history replay PASS');
+ }
+
  }
  fs.mkdirSync('.agent-state',{recursive:true});fs.writeFileSync('.agent-state/live-acceptance.json',JSON.stringify(receipt,null,2)+'\n');
  }finally{server.shutdown();fs.rmSync(cwd,{recursive:true,force:true});}

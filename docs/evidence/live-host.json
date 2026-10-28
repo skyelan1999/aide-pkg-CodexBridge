@@ -1,0 +1,11 @@
+{
+  "platform": "darwin",
+  "arch": "arm64",
+  "node": "v24.19.0",
+  "catalogCount": 8,
+  "inference": true,
+  "model": "gpt-6.1-sol",
+  "json": true,
+  "sse": true,
+  "toolRoundTrip": true
+}

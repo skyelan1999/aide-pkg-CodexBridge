@@ -91,7 +91,7 @@ The deterministic 15-file plugin ZIP uses an explicit allowlist. It contains hos
 # Real host catalog only, no inference
 node scripts/live-acceptance.cjs
 # Explicit synthetic JSON + SSE inference; uses the logged-in Codex account quota
-node scripts/live-acceptance.cjs --infer
+node scripts/live-acceptance.cjs --infer --tools
 ```
 
 See [architecture](docs/ARCHITECTURE.md), [acceptance record](docs/ACCEPTANCE.md) and [source provenance](docs/PROVENANCE.md). Cross-platform CI exercises native Node child processes, install/update, Unicode/space paths, queue/cancellation and npm-shim resolution. It does not prove live Codex inference on every OS/CPU or Windows version.
