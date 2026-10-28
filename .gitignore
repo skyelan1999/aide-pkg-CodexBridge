@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.agent-state/
+config.json
+data/
+*.log
+.DS_Store

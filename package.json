@@ -1,0 +1,14 @@
+{
+  "name": "aide-pkg-codex-bridge",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "node scripts/build.cjs",
+    "test": "node --test scripts/*.test.cjs",
+    "package": "python3 scripts/package-codex-bridge.py --out dist"
+  }
+}

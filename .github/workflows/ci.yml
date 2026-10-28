@@ -1,0 +1,27 @@
+name: Cross-platform bridge checks
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+defaults:
+  run:
+    shell: bash
+jobs:
+  bridge:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-2022, macos-15, ubuntu-22.04]
+        node: [18, 24]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: node scripts/build.cjs
+      - run: python scripts/package-codex-bridge.py --out dist
+      - run: node --test scripts/codex-openai-bridge.test.cjs scripts/codex-bridge-package.test.cjs scripts/platform.test.cjs scripts/plugin.test.cjs
+      - run: git diff --exit-code
