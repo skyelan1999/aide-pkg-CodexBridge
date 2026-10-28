@@ -70,7 +70,7 @@ test('key access reads the installed service key without creating a second token
       assert.equal(r.status,0,r.stderr);assert.equal(r.stdout.trim(),key);
     }
   } else {
-    const r=spawnSync(process.env.ComSpec||'cmd.exe',['/d','/s','/c','"'+path.join(target,'get-key.cmd')+'"'],{encoding:'utf8',input:'\n'});
+    const r=spawnSync(process.env.ComSpec||'cmd.exe',['/d','/c','get-key.cmd'],{cwd:target,encoding:'utf8',input:'\n'});
     assert.equal(r.status,0,r.stderr);assert.ok(r.stdout.includes(key));
   }
 });
@@ -85,7 +85,7 @@ test('uninstall refuses active runtime and preserves key/config/unknown files ac
   r=execute('uninstall',directory);assert.notEqual(r.status,0);assert.match(r.stderr,/running/);
   assert.equal(fs.existsSync(path.join(directory,'manage.cjs')),true);
   assert.notEqual(execute('install',directory).status,0);fs.unlinkSync(pid);
-  if(process.platform==='win32')r=spawnSync(process.env.ComSpec||'cmd.exe',['/d','/s','/c','"'+path.join(directory,'uninstall.cmd')+'"'],{encoding:'utf8',input:'\n'});
+  if(process.platform==='win32')r=spawnSync(process.env.ComSpec||'cmd.exe',['/d','/c','uninstall.cmd'],{cwd:directory,encoding:'utf8',input:'\n'});
   else r=spawnSync('sh',[path.join(directory,process.platform==='darwin'?'uninstall.command':'uninstall.sh')],{encoding:'utf8'});
   assert.equal(r.status,0,r.stderr);assert.equal(fs.existsSync(path.join(directory,'manage.cjs')),false);
   assert.equal(fs.readFileSync(keyFile,'utf8'),key);assert.equal(fs.readFileSync(configFile,'utf8'),config);
