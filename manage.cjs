@@ -29,7 +29,7 @@ function install(target) {
   fs.writeFileSync(path.join(target, '.aide-codex-bridge'), 'aide-codex-bridge\n');
   if (!fs.existsSync(path.join(target, 'config.json'))) fs.copyFileSync(path.join(target, 'config.example.json'), path.join(target, 'config.json'));
   ensureKey(target);
-  console.log('Installed: ' + target + '\nConfigure config.json, then run start.cmd (Windows) or start.command/start.sh (macOS/Linux).\nGet your local bridge key / 获取本地桥接密钥:\n' + keyHelp(target));
+  console.log('Installed: ' + target + '\nConfigure config.json, then run start.cmd (Windows), sh start.command (macOS), or sh start.sh (Linux).\nGet your local bridge key / 获取本地桥接密钥:\n' + keyHelp(target));
 }
 function ensureKey(directory) {
   const data = path.join(directory, 'data');
@@ -109,6 +109,19 @@ function start() {
   process.on('SIGINT', () => child.kill('SIGINT'));
   process.on('SIGTERM', () => child.kill('SIGTERM'));
 }
+function repairPermissions(target = root) {
+  const directory = path.resolve(target);
+  if (process.platform === 'win32') throw Error('Executable-bit repair is only needed on macOS/Linux / Windows 无需修复执行位');
+  const info = fs.lstatSync(directory);
+  if (!info.isDirectory() || info.isSymbolicLink()) throw Error('Refuse symbolic link or non-directory target');
+  const manifestPath = path.join(directory, 'manifest.json');
+  if (fs.lstatSync(manifestPath).isSymbolicLink() || JSON.parse(fs.readFileSync(manifestPath, 'utf8')).id !== 'codex-bridge') throw Error('Not a Codex Bridge package');
+  const files = payload.filter(name => /\.(sh|command)$/.test(name)).map(name => path.join(directory, name));
+  // Validate the entire allowlist before modifying any file. Never traverse links.
+  for (const file of files) { const stat = fs.lstatSync(file); if (!stat.isFile() || stat.isSymbolicLink()) throw Error('Refuse missing, non-file or symbolic link launcher'); }
+  for (const file of files) fs.chmodSync(file, 0o755);
+  console.log('Launcher permissions repaired (0755) / 启动脚本权限已修复: ' + files.length + '\nConfiguration, credentials and system quarantine settings were not changed.');
+}
 function doctor() {
   console.log('Platform:', process.platform, process.arch, 'Node:', process.version);
   const file = path.join(root, 'config.json');
@@ -124,10 +137,11 @@ if (require.main === module) {
       case 'install': install(process.argv[3] || defaultTarget()); break;
       case 'start': start(); break;
       case 'doctor': doctor(); break;
+      case 'repair-permissions': repairPermissions(process.argv[3]); break;
       case 'uninstall': uninstall(process.argv[3]?.startsWith('--') ? undefined : process.argv[3], {keepLauncher:process.argv.includes('--keep-launcher')}); break;
       case 'key': console.log(readInstalledKey(process.argv[3])); break;
-      default: console.log('node manage.cjs install [target-directory] | start | doctor | key [target-directory] | uninstall [target-directory]');
+      default: console.log('node manage.cjs install [target-directory] | start | doctor | key [target-directory] | uninstall [target-directory] | repair-permissions [package-directory]');
     }
   } catch (error) { console.error(error.message); process.exitCode = 1; }
 }
-module.exports = { install, defaultTarget, payload, readInstalledKey, keyHelp, uninstall, assertStopped };
+module.exports = { install, defaultTarget, payload, readInstalledKey, keyHelp, uninstall, assertStopped, repairPermissions };

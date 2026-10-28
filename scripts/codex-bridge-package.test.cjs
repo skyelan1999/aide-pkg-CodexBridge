@@ -92,3 +92,35 @@ test('uninstall refuses active runtime and preserves key/config/unknown files ac
   assert.equal(fs.readFileSync(path.join(directory,'keep-note.txt'),'utf8'),'unrelated user file');
   r=execute('install',directory);assert.equal(r.status,0,r.stderr);assert.equal(execute('key',directory).stdout.trim(),key.trim());
 });
+
+test('permission-loss recovery validates all launchers and preserves config, key and other files', {skip:process.platform==='win32'}, () => {
+  const folder=fs.mkdtempSync(path.join(state,'permission lost package 空格-'));
+  fs.cpSync(bundle,folder,{recursive:true});
+  const {payload}=require(path.join(folder,'manage.cjs'));
+  const launchers=payload.filter(n=>/\.(command|sh)$/.test(n));
+  for(const n of launchers)fs.chmodSync(path.join(folder,n),0o644);
+  const denied=spawnSync(path.join(folder,'install.command'),[path.join(folder,'installed')],{encoding:'utf8'});
+  assert.equal(denied.error?.code,'EACCES');
+  const keep=path.join(folder,'user-note');fs.writeFileSync(keep,'keep',{mode:0o600});
+  const repair=spawnSync(process.execPath,[path.join(folder,'manage.cjs'),'repair-permissions'],{encoding:'utf8'});
+  assert.equal(repair.status,0,repair.stderr);
+  for(const n of launchers)assert.equal(fs.statSync(path.join(folder,n)).mode&0o777,0o755);
+  assert.equal(fs.statSync(keep).mode&0o777,0o600);
+  assert.equal(fs.readFileSync(keep,'utf8'),'keep');
+  const installed=path.join(folder,'installed');
+  const install=spawnSync(path.join(folder,'install.command'),[installed],{encoding:'utf8'});
+  assert.equal(install.status,0,install.stderr);
+  const key=fs.readFileSync(path.join(installed,'data/bridge.key'));
+  const config=fs.readFileSync(path.join(installed,'config.json'));
+  for(const n of launchers)fs.chmodSync(path.join(installed,n),0o644);
+  const again=spawnSync(process.execPath,[path.join(installed,'manage.cjs'),'repair-permissions'],{encoding:'utf8'});
+  assert.equal(again.status,0,again.stderr);
+  assert.deepEqual(fs.readFileSync(path.join(installed,'data/bridge.key')),key);
+  assert.deepEqual(fs.readFileSync(path.join(installed,'config.json')),config);
+  const link=path.join(folder,launchers[launchers.length-1]);fs.unlinkSync(link);fs.symlinkSync(keep,link);
+  fs.chmodSync(path.join(folder,launchers[0]),0o644);
+  const refused=spawnSync(process.execPath,[path.join(folder,'manage.cjs'),'repair-permissions'],{encoding:'utf8'});
+  assert.notEqual(refused.status,0);
+  assert.equal(fs.statSync(path.join(folder,launchers[0])).mode&0o777,0o644);
+  assert.equal(fs.statSync(keep).mode&0o777,0o600);
+});
