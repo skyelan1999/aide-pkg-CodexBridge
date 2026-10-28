@@ -45,8 +45,50 @@ test('aide plugin declares executable diagnostic; has password-only diagnostic k
 });
 test('package syntax and launchers', () => {
   for (const file of ['index.js', 'manage.cjs', 'runtime/bridge.cjs']) assert.equal(spawnSync(process.execPath, ['--check', path.join(bundle, file)]).status, 0);
-  for (const file of ['install.sh', 'start.sh', 'install.command', 'start.command']) {
+  for (const file of ['install.sh', 'start.sh', 'install.command', 'start.command', 'get-key.sh', 'get-key.command', 'uninstall.sh', 'uninstall.command']) {
     assert.equal(fs.readFileSync(path.join(bundle, file), 'utf8').startsWith('#!/bin/sh\n'), true);
     if (process.platform !== 'win32') assert.equal(spawnSync('sh', ['-n', path.join(bundle, file)]).status, 0);
   }
+});
+
+test('key access reads the installed service key without creating a second token', () => {
+  const key = fs.readFileSync(path.join(target, 'data', 'bridge.key'), 'utf8').trim();
+  const result = spawnSync(process.execPath, [path.join(target, 'manage.cjs'), 'key'], {encoding:'utf8'});
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.stdout.trim(), key);
+  assert.equal(execute('key', target).stdout.trim(), key);
+  const { readInstalledKey, keyHelp } = require(path.join(bundle, 'manage.cjs'));
+  const absent = fs.mkdtempSync(path.join(state, 'uninstalled-key-'));
+  assert.throws(() => readInstalledKey(absent), /not installed/);
+  assert.equal(fs.existsSync(path.join(absent, 'data')), false);
+  assert.match(keyHelp('C:\\Bridge','win32'), /get-key[.]cmd/);
+  assert.match(keyHelp('/tmp/Bridge','darwin'), /get-key[.]command/);
+  assert.match(keyHelp('/tmp/Bridge','linux'), /get-key[.]sh/);
+  if(process.platform !== 'win32') {
+    for (const name of ['get-key.sh','get-key.command']) {
+      const r=spawnSync('sh',[path.join(target,name)],{encoding:'utf8'});
+      assert.equal(r.status,0,r.stderr);assert.equal(r.stdout.trim(),key);
+    }
+  } else {
+    const r=spawnSync(process.env.ComSpec||'cmd.exe',['/d','/c','get-key.cmd'],{cwd:target,encoding:'utf8',input:'\n'});
+    assert.equal(r.status,0,r.stderr);assert.ok(r.stdout.includes(key));
+  }
+});
+
+test('uninstall refuses active runtime and preserves key/config/unknown files across reinstall', () => {
+  const directory=fs.mkdtempSync(path.join(state,'bridge uninstall 空格-'));
+  let r=execute('install',directory);assert.equal(r.status,0,r.stderr);
+  const keyFile=path.join(directory,'data','bridge.key'),configFile=path.join(directory,'config.json');
+  const key=fs.readFileSync(keyFile,'utf8'),config=fs.readFileSync(configFile,'utf8');
+  fs.writeFileSync(path.join(directory,'keep-note.txt'),'unrelated user file');
+  const pid=path.join(directory,'data','manager.pid');fs.writeFileSync(pid,String(process.pid));
+  r=execute('uninstall',directory);assert.notEqual(r.status,0);assert.match(r.stderr,/running/);
+  assert.equal(fs.existsSync(path.join(directory,'manage.cjs')),true);
+  assert.notEqual(execute('install',directory).status,0);fs.unlinkSync(pid);
+  if(process.platform==='win32')r=spawnSync(process.env.ComSpec||'cmd.exe',['/d','/c','uninstall.cmd'],{cwd:directory,encoding:'utf8',input:'\n'});
+  else r=spawnSync('sh',[path.join(directory,process.platform==='darwin'?'uninstall.command':'uninstall.sh')],{encoding:'utf8'});
+  assert.equal(r.status,0,r.stderr);assert.equal(fs.existsSync(path.join(directory,'manage.cjs')),false);assert.equal(fs.existsSync(path.join(directory,'uninstall.cmd')),process.platform==='win32');
+  assert.equal(fs.readFileSync(keyFile,'utf8'),key);assert.equal(fs.readFileSync(configFile,'utf8'),config);
+  assert.equal(fs.readFileSync(path.join(directory,'keep-note.txt'),'utf8'),'unrelated user file');
+  r=execute('install',directory);assert.equal(r.status,0,r.stderr);assert.equal(execute('key',directory).stdout.trim(),key.trim());
 });

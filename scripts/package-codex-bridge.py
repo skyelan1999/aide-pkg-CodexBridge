@@ -3,7 +3,7 @@ import argparse, hashlib, json, shutil, zipfile
 from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 FILES = ['manifest.json','index.js','viewer.html','manage.cjs','config.example.json','README.md','LICENSE',
-         'runtime/bridge.cjs','runtime/launch.cjs','install.cmd','start.cmd','install.sh','start.sh','install.command','start.command']
+         'uninstall.cmd','uninstall.sh','uninstall.command','get-key.cmd','get-key.sh','get-key.command','runtime/bridge.cjs','runtime/launch.cjs','install.cmd','start.cmd','install.sh','start.sh','install.command','start.command']
 def build(output):
     version=json.loads((ROOT/'manifest.json').read_text(encoding='utf-8'))['version']
     output.mkdir(parents=True,exist_ok=True)
