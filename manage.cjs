@@ -7,7 +7,7 @@ const { spawn, spawnSync } = require('node:child_process');
 const { randomBytes } = require('node:crypto');
 const root = __dirname;
 const { resolveLaunch } = require('./runtime/launch.cjs');
-const payload = ['manifest.json', 'index.js', 'config.example.json', 'manage.cjs', 'README.md', 'runtime/bridge.cjs', 'runtime/launch.cjs', 'viewer.html', 'LICENSE', 'install.cmd', 'start.cmd', 'install.sh', 'start.sh', 'install.command', 'start.command'];
+const payload = ['manifest.json', 'index.js', 'config.example.json', 'manage.cjs', 'README.md', 'runtime/bridge.cjs', 'runtime/launch.cjs', 'viewer.html', 'LICENSE', 'get-key.cmd', 'get-key.command', 'get-key.sh', 'install.cmd', 'start.cmd', 'install.sh', 'start.sh', 'install.command', 'start.command'];
 function defaultTarget(platform = process.platform, env = process.env, home = os.homedir()) {
   if (platform === 'win32') return path.win32.join(env.LOCALAPPDATA || path.win32.join(home, 'AppData', 'Local'), 'aide-codex-bridge');
   if (platform === 'darwin') return path.posix.join(home, 'Library', 'Application Support', 'aide-codex-bridge');
@@ -28,7 +28,7 @@ function install(target) {
   fs.writeFileSync(path.join(target, '.aide-codex-bridge'), 'aide-codex-bridge\n');
   if (!fs.existsSync(path.join(target, 'config.json'))) fs.copyFileSync(path.join(target, 'config.example.json'), path.join(target, 'config.json'));
   ensureKey(target);
-  console.log('Installed: ' + target + '\nConfigure config.json, then run start.cmd (Windows) or start.command/start.sh (macOS/Linux).');
+  console.log('Installed: ' + target + '\nConfigure config.json, then run start.cmd (Windows) or start.command/start.sh (macOS/Linux).\nGet your local bridge key / 获取本地桥接密钥:\n' + keyHelp(target));
 }
 function ensureKey(directory) {
   const data = path.join(directory, 'data');
@@ -39,6 +39,24 @@ function ensureKey(directory) {
   if (!fs.existsSync(key)) fs.writeFileSync(key, randomBytes(32).toString('hex'), { flag: 'wx', mode: 0o600 });
   return key;
 }
+
+function keyHelp(target, platform = process.platform) {
+  const launcher = platform === 'win32' ? 'get-key.cmd' : platform === 'darwin' ? 'get-key.command' : 'get-key.sh';
+  const file = (platform === 'win32' ? path.win32 : path.posix).join(target, launcher);
+  return (platform === 'win32' ? '' : 'sh ') + '"' + file + '"';
+}
+function readInstalledKey(target) {
+  const candidates = target ? [path.resolve(target)] : [root, defaultTarget()];
+  const installed = candidates.find(p => fs.existsSync(path.join(p, '.aide-codex-bridge')));
+  if (!installed) throw Error('Host bridge is not installed / 宿主桥接尚未安装。Extract the ZIP and run install.cmd (Windows), sh install.command (macOS), or sh install.sh (Linux). Importing only the Aide plugin is not host installation.');
+  const file = path.join(installed, 'data', 'bridge.key');
+  if (!fs.existsSync(file)) throw Error('Installed bridge key is missing; rerun the installer / 桥接密钥缺失，请重新运行安装器。');
+  if (fs.lstatSync(installed).isSymbolicLink() || fs.lstatSync(path.dirname(file)).isSymbolicLink() || fs.lstatSync(file).isSymbolicLink()) throw Error('Refuse symbolic link key');
+  const value = fs.readFileSync(file, 'utf8').trim();
+  if (value.length < 32) throw Error('Bridge key is invalid; check the host installation / 桥接密钥无效，请检查宿主安装。');
+  return value;
+}
+
 function start() {
   const c = JSON.parse(fs.readFileSync(path.join(root, 'config.json'), 'utf8'));
   const args = [path.join(root, 'runtime', 'bridge.cjs'), '--host', c.host, '--port', String(c.port), '--concurrency', String(c.concurrency), '--max-queue', String(c.maxQueue), '--queue-timeout-ms', String(c.queueTimeoutMs), '--key-file', ensureKey(root), '--codex', c.codex];
@@ -64,9 +82,9 @@ if (require.main === module) {
       case 'install': install(process.argv[3] || defaultTarget()); break;
       case 'start': start(); break;
       case 'doctor': doctor(); break;
-      case 'key': console.log(fs.readFileSync(ensureKey(root), 'utf8').trim()); break;
+      case 'key': console.log(readInstalledKey(process.argv[3])); break;
       default: console.log('node manage.cjs install [target-directory] | start | doctor | key');
     }
   } catch (error) { console.error(error.message); process.exitCode = 1; }
 }
-module.exports = { install, defaultTarget, payload };
+module.exports = { install, defaultTarget, payload, readInstalledKey, keyHelp };

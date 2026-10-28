@@ -2,7 +2,7 @@
 
 An independent Aide plugin and optional local host service. Connect an installed, signed-in Codex CLI to Aide's **OpenAI-compatible Chat Completions** provider. No Aide core changes, Codex binaries, account tokens or user chat histories are bundled.
 
-独立插件 + 宿主机服务，把本机 Codex 接入 Aide 模型提供商。支持 Windows、macOS、Linux 的安装与启动入口；无需 PowerShell。插件自己的版本为 **0.1.0**，不随 Aide RC 号命名。
+独立插件 + 宿主机服务，把本机 Codex 接入 Aide 模型提供商。支持 Windows、macOS、Linux 的安装与启动入口；无需 PowerShell。插件自己的版本为 **0.1.1**，不随 Aide RC 号命名。
 
 ## Architecture / 编排
 
@@ -64,6 +64,38 @@ node manage.cjs key
 
 `key` intentionally displays the local key in your terminal. Do not capture that command in shared logs. Generated files live outside Git and ZIP allowlists. On POSIX, generated key mode is 0600; Windows access relies on your user-profile ACLs. Stop the host service before upgrading/removing it. Removing the plugin from Aide does not stop a separately running host process.
 
+## 获取 token / Get the local bridge key
+
+**先安装宿主组件。** 在 Aide 上传 ZIP 只会安装插件，不会创建下面的宿主目录。若目录不存在，先解压 ZIP，在解压目录运行对应安装器：
+
+| 系统 / OS | 安装 / Install | 安装后取密钥入口 / Key launcher |
+| --- | --- | --- |
+| Windows CMD | `install.cmd` | 安装目录双击 `get-key.cmd` |
+| macOS Terminal | `sh install.command` | 安装目录运行 `sh get-key.command`，或双击该文件 |
+| Linux Terminal | `sh install.sh` | 安装目录运行 `sh get-key.sh` |
+
+默认目录安装完成后，也可以从任意目录复制执行对应系统的命令：
+
+Windows **CMD**（不要在 macOS/Linux 终端使用 `%LOCALAPPDATA%`）：
+
+```cmd
+node "%LOCALAPPDATA%\aide-codex-bridge\manage.cjs" key
+```
+
+macOS：
+
+```sh
+node "$HOME/Library/Application Support/aide-codex-bridge/manage.cjs" key
+```
+
+Linux：
+
+```sh
+node "${XDG_DATA_HOME:-$HOME/.local/share}/aide-codex-bridge/manage.cjs" key
+```
+
+自选安装目录：运行该目录的 `get-key` 入口，或 `node manage.cjs key "实际安装目录"`。取密钥不会在未安装的解压目录偷偷创建另一个密钥；未安装时会明确提示先安装。安装器会打印适合当前系统的完整取密钥命令。输出只填写到 Aide 模型提供商 API Key / 插件可选诊断密钥，不发到聊天里。The bridge key is generated locally; it is not your Codex login token.
+
 ## Capabilities and limits
 
 - `GET /health`: minimal unauthenticated service identity/version; not a login or inference check.
@@ -85,7 +117,7 @@ python scripts/package-codex-bridge.py --out dist
 node --test scripts/*.test.cjs
 ```
 
-The deterministic 15-file plugin ZIP uses an explicit allowlist. It contains host launchers/runtime but no binaries, local config, auth, keys or test evidence. Run the generated ZIP through Aide's normal plugin validation before distributing.
+The deterministic 18-file plugin ZIP uses an explicit allowlist. It contains host launchers/runtime but no binaries, local config, auth, keys or test evidence. Run the generated ZIP through Aide's normal plugin validation before distributing.
 
 ```sh
 # Real host catalog only, no inference
