@@ -124,3 +124,17 @@ test('permission-loss recovery validates all launchers and preserves config, key
   assert.equal(fs.statSync(path.join(folder,launchers[0])).mode&0o777,0o644);
   assert.equal(fs.statSync(keep).mode&0o777,0o600);
 });
+
+// Reproduce Aide's upload validator: only main is copied to aide-validate-*.
+test('packaged entry loads and registers tools without sibling helpers or manifest', t => {
+  const root=fs.mkdtempSync(path.join(fs.realpathSync(require('node:os').tmpdir()),'aide-validate-'));
+  t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
+  const manifest=JSON.parse(fs.readFileSync(path.join(bundle,'manifest.json')));
+  const code=fs.readFileSync(path.join(bundle,manifest.main));
+  assert.ok(code.length<256*1024);
+  const entry=path.join(root,'index.js');fs.writeFileSync(entry,code);
+  const result=spawnSync(process.execPath,['-e',`const p=require(process.argv[1]);const tools=[];p.apply({settings:{},tool:d=>tools.push(d)});if(p.name!=='codex-bridge'||tools.length!==7||tools.some(t=>typeof t.handler!=='function'))process.exit(1);console.log(JSON.stringify({name:p.name,tools:tools.map(t=>t.name)}))`,entry],{encoding:'utf8'});
+  assert.equal(result.status,0,result.stderr);
+  assert.equal(JSON.parse(result.stdout).name,'codex-bridge');
+  assert.deepEqual(fs.readdirSync(root),['index.js']);
+});
