@@ -53,3 +53,7 @@ npm test
 Native archives and embedded payload identity are checked by `scripts/verify-host-bundle.py`. See [architecture](docs/ARCHITECTURE.md), [version policy](docs/VERSIONING.md), [source provenance](docs/PROVENANCE.md), [advanced CLI fallback](docs/ADVANCED-CLI.md) and the version-specific acceptance record. Native managers are unsigned previews; normal OS approval may be required. Checksums verify bytes, not publisher identity. Codex binaries, login tokens and user chats are not redistributed. Wrapper/runtime license: MIT.
 
 Public-plugin bugs, requests and acceptance summaries belong in [Aide Issues](https://github.com/skyelan1999/aide/issues), identified as Codex Bridge and linked to this implementation repository. Do not upload keys or real account/chat data.
+
+## 图形启动时的 CLI 查找 / GUI CLI discovery
+
+启动时会检查并验证 Codex CLI，支持常用 Homebrew、npm、NVM、Volta 及 macOS 应用位置，成功后仅保存已核验的 CLI 路径。找不到时可在更多设置检查环境；失败不会覆盖原配置或账号。Windows npm 安装通过 Node 运行官方 JS 入口，不执行 shell。

@@ -20,6 +20,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -330,6 +331,53 @@ func (m *manager) install() error {
 	}
 	return atomic(filepath.Join(m.root, ".aide-codex-bridge"), []byte("aide-codex-bridge\n"), 0600)
 }
+func nodeVersionBins(home string) []string {
+	root := filepath.Join(home, ".nvm", "versions", "node")
+	entries, _ := os.ReadDir(root)
+	type item struct {
+		name    string
+		version [3]int
+	}
+	versions := []item{}
+	for _, entry := range entries {
+		if !entry.IsDir() || !strings.HasPrefix(entry.Name(), "v") {
+			continue
+		}
+		parts := strings.Split(strings.TrimPrefix(entry.Name(), "v"), ".")
+		if len(parts) != 3 {
+			continue
+		}
+		value := item{name: entry.Name()}
+		valid := true
+		for i, part := range parts {
+			n, e := strconv.Atoi(part)
+			if e != nil || n < 0 {
+				valid = false
+				break
+			}
+			value.version[i] = n
+		}
+		if valid {
+			versions = append(versions, value)
+		}
+	}
+	sort.Slice(versions, func(i, j int) bool {
+		for k := 0; k < 3; k++ {
+			if versions[i].version[k] != versions[j].version[k] {
+				return versions[i].version[k] > versions[j].version[k]
+			}
+		}
+		return versions[i].name > versions[j].name
+	})
+	if len(versions) > 32 {
+		versions = versions[:32]
+	}
+	bins := make([]string, 0, len(versions))
+	for _, v := range versions {
+		bins = append(bins, filepath.Join(root, v.name, "bin"))
+	}
+	return bins
+}
 func executable(name string) string {
 	if p, e := exec.LookPath(name); e == nil {
 		return p
@@ -342,6 +390,9 @@ func executable(name string) string {
 			files = []string{filepath.Join(os.Getenv("ProgramFiles"), "nodejs", "node.exe"), filepath.Join(os.Getenv("LOCALAPPDATA"), "Programs", "nodejs", "node.exe")}
 		} else {
 			files = []string{"/opt/homebrew/bin/node", "/usr/local/bin/node", "/usr/bin/node", filepath.Join(home, ".local", "bin", "node")}
+			for _, dir := range append([]string{filepath.Join(home, ".volta", "bin"), filepath.Join(home, ".nvm", "current", "bin")}, nodeVersionBins(home)...) {
+				files = append(files, filepath.Join(dir, "node"))
+			}
 			more, _ := filepath.Glob("/opt/node-v*/bin/node")
 			if len(more) <= 32 {
 				files = append(files, more...)
@@ -375,16 +426,54 @@ func (m *manager) config() (map[string]any, error) {
 	return d, e
 }
 func (m *manager) prepareConfig() error {
-	d, e := m.config()
+	configPath := filepath.Join(m.root, "config.json")
+	if e := regular(configPath); e != nil {
+		return e
+	}
+	before, e := os.ReadFile(configPath)
 	if e != nil {
 		return e
 	}
-	if s, _ := d["codex"].(string); s == "codex" || s == "" {
-		if binary := executable("codex"); binary != "" {
-			d["codex"] = binary
-			b, _ := json.MarshalIndent(d, "", "  ")
-			return atomic(filepath.Join(m.root, "config.json"), b, 0600)
+	var d map[string]json.RawMessage
+	if e = json.Unmarshal(before, &d); e != nil {
+		return e
+	}
+	node := executable("node")
+	if node == "" {
+		return errors.New("Node.js 18+ is not installed or discoverable")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 12*time.Second)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, node, filepath.Join(m.root, "manage.cjs"), "doctor", "--json")
+	configureProcess(cmd)
+	output, e := cmd.Output()
+	if e != nil {
+		return errors.New("Codex CLI check failed; set config.json codex to its executable path, then diagnose again")
+	}
+	var verified struct {
+		ExecutablePath string `json:"executablePath"`
+		Version        string `json:"version"`
+	}
+	if json.Unmarshal(output, &verified) != nil || !filepath.IsAbs(verified.ExecutablePath) || !strings.HasPrefix(verified.Version, "codex-cli ") {
+		return errors.New("Invalid Codex CLI diagnostic result")
+	}
+	// Persist only the exact executable/official JS entry that passed --version, retaining all other settings.
+	latest, e := os.ReadFile(configPath)
+	if e != nil {
+		return e
+	}
+	if !bytes.Equal(before, latest) {
+		return errors.New("Configuration changed during CLI diagnosis; diagnose again")
+	}
+	var previous string
+	_ = json.Unmarshal(d["codex"], &previous)
+	if previous != verified.ExecutablePath {
+		d["codex"], _ = json.Marshal(verified.ExecutablePath)
+		b, e := json.MarshalIndent(d, "", "  ")
+		if e != nil {
+			return e
 		}
+		return atomic(configPath, b, 0600)
 	}
 	return nil
 }
@@ -406,15 +495,7 @@ func (m *manager) doctor() error {
 	if !m.installed() {
 		return errors.New("Install the host component before checking Codex")
 	}
-	if e = m.prepareConfig(); e != nil {
-		return e
-	}
-	cmd := exec.CommandContext(ctx, node, filepath.Join(m.root, "manage.cjs"), "doctor")
-	configureProcess(cmd)
-	if e = cmd.Run(); e != nil {
-		return errors.New("Codex executable check failed; install/sign in to Codex and inspect the native setup guide")
-	}
-	return nil
+	return m.prepareConfig()
 }
 func (m *manager) start() error {
 	if m.child != nil {
@@ -433,19 +514,6 @@ func (m *manager) start() error {
 	if node == "" {
 		return errors.New("Node.js 18+ is required on the host; install it before starting")
 	}
-	d, e := m.config()
-	if e != nil {
-		return e
-	}
-	if s, _ := d["codex"].(string); s == "codex" || s == "" {
-		if binary := executable("codex"); binary != "" {
-			d["codex"] = binary
-			b, _ := json.MarshalIndent(d, "", "  ")
-			if e = atomic(filepath.Join(m.root, "config.json"), b, 0600); e != nil {
-				return e
-			}
-		}
-	}
 	cmd := exec.Command(node, filepath.Join(m.root, "manage.cjs"), "start")
 	cmd.Dir = m.root
 	configureProcess(cmd)
@@ -455,7 +523,7 @@ func (m *manager) start() error {
 	}
 	cmd.Stdout = log
 	cmd.Stderr = log
-	if e = cmd.Start(); e != nil {
+	if e := cmd.Start(); e != nil {
 		log.Close()
 		return e
 	}
@@ -538,6 +606,18 @@ func (m *manager) uninstall() error {
 		}
 	}
 	return atomic(filepath.Join(m.root, ".aide-codex-bridge"), []byte("settings-retained\n"), 0600)
+}
+func (m *manager) configuredCodexFound() bool {
+	d, e := m.config()
+	if e != nil {
+		return false
+	}
+	p, _ := d["codex"].(string)
+	if !filepath.IsAbs(p) {
+		return false
+	}
+	info, e := os.Stat(p)
+	return e == nil && info.Mode().IsRegular()
 }
 func (m *manager) status() map[string]any {
 	port := 8787

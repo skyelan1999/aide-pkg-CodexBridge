@@ -29,3 +29,7 @@ test('failed action survives subsequent status refresh; clipboard denial gives a
  const f=fixture({clipboard:false});await f.settle();await f.click('install');await f.click('key');assert.equal(f.nodes.bridgeKey.selected,true);assert.match(f.nodes.result.textContent,/请复制/);
  f.fail();await f.click('start');assert.equal(f.nodes.result.textContent,'SYNTHETIC ACTION FAILED');await f.tick();assert.equal(f.nodes.result.textContent,'SYNTHETIC ACTION FAILED');assert.equal(f.nodes.state.textContent,'已安装，已停止');
 });
+
+test('GUI PATH hint does not prevent the verified backend discovery at Start',async()=>{
+ const f=fixture();await f.settle();await f.click('install');f.state.codexFound=false;await f.tick();assert.equal(f.nodes.start.disabled,false);await f.click('start');assert.equal(f.state.running,true);
+});
