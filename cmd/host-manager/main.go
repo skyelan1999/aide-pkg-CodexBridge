@@ -866,38 +866,40 @@ func (m *manager) handler() http.Handler {
 	})
 	return mux
 }
-func openBrowser(u string) {
-	var c *exec.Cmd
-	switch runtime.GOOS {
-	case "darwin":
-		c = exec.Command("/usr/bin/open", u)
-	case "windows":
-		c = exec.Command(filepath.Join(os.Getenv("SystemRoot"), "System32", "rundll32.exe"), "url.dll,FileProtocolHandler", u)
-	default:
-		c = exec.Command("xdg-open", u)
-	}
-	_ = c.Start()
-}
 func main() {
+	if err := runManager(); err != nil {
+		if len(os.Args) > 1 && os.Args[1] == "--aide-managed" {
+			fmt.Fprintln(os.Stderr, "Codex host component:", err)
+		} else {
+			reportStartupError(err)
+		}
+		os.Exit(1)
+	}
+}
+
+func runManager() error {
+	if len(os.Args) > 1 && os.Args[1] == "--aide-managed" {
+		return runAideManaged(os.Args[2:])
+	}
 	if len(os.Args) > 1 && os.Args[1] == "--version" {
 		fmt.Println("Codex Bridge Manager " + version)
-		return
+		return nil
 	}
 	root := userRoot()
 	state := root + "-manager"
 	if e := noLinks(state); e != nil {
-		panic(e)
+		return e
 	}
 	if e := os.MkdirAll(state, 0700); e != nil {
-		panic(e)
+		return e
 	}
 	key, e := ensureKey(filepath.Join(state, "control.key"))
 	if e != nil {
-		panic(e)
+		return e
 	}
 	m := &manager{root: root, control: key, payload: payload, shutdown: make(chan struct{})}
 	if e := m.loadClients(); e != nil {
-		panic(e)
+		return e
 	}
 	ln, e := net.Listen("tcp", "127.0.0.1:8788")
 	if e != nil {
@@ -909,23 +911,25 @@ func main() {
 		if err == nil {
 			r.Body.Close()
 			if r.StatusCode == 200 {
-				openBrowser("http://127.0.0.1:8788/#" + key)
-				return
+				showManagerPage("http://127.0.0.1:8788/#" + key)
+				return nil
 			}
 		}
-		panic("Manager port unavailable")
+		return errors.New("Manager port 8788 is unavailable. Close the previous manager or the conflicting application and retry / 管理器端口 8788 不可用，请退出旧管理器或占用端口的程序后重试")
 	}
-	openBrowser("http://127.0.0.1:8788/#" + key)
 	server := &http.Server{Handler: m.handler(), ReadHeaderTimeout: 5 * time.Second, IdleTimeout: 30 * time.Second, MaxHeaderBytes: 16 << 10}
 	errs := make(chan error, 1)
 	go func() { errs <- server.Serve(ln) }()
+	// Serve requests before asking the OS to open the owner page.
+	go showManagerPage("http://127.0.0.1:8788/#" + key)
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, terminationSignals()...)
 	defer signal.Stop(signals)
+	var serveErr error
 	select {
 	case <-m.shutdown:
 	case <-signals:
-	case <-errs:
+	case serveErr = <-errs:
 	}
 	m.mu.Lock()
 	if m.child != nil {
@@ -942,4 +946,8 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 	_ = server.Shutdown(ctx)
+	if serveErr != nil && !errors.Is(serveErr, http.ErrServerClosed) {
+		return errors.New("Manager HTTP service stopped unexpectedly / 管理器页面服务意外停止")
+	}
+	return nil
 }

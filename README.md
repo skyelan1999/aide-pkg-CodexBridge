@@ -1,3 +1,15 @@
+# Codex Bridge 0.4.0 — Aide 内管理 / In-plugin management
+
+新版 Aide 启动器支持 `host.component.codex-bridge` 时，打开插件即可操作 **安装、启动、停止、卸载、生成密钥**。不用另下 EXE，不用打开独立管理器网页，不用填写管理连接码。宿主组件随 Aide 镜像提供，启动器校验后自动运行；安装桥接仍由你点击“安装”执行。
+
+需要宿主已有 Node.js 18+、已安装并登录的 Codex CLI。点击“生成密钥”后复制到 Aide 模型提供商的加密设置；不会覆盖已有提供商或切换模型。卸载保留配置、密钥和 Codex 登录。账户额度仅查询，不消耗重置次数。
+
+**兼容说明**：该流程需要包含 Aide #615 集成的新启动器和镜像，单独升级插件或旧发行包仅替换镜像不够。旧 Aide 保留下面的独立管理器兼容入口；不要把该兼容入口当作新版安装步骤。本版本实现与验证状态见 [集成记录](docs/MANAGER-INTEGRATION-615.md)，版本号不代表已经发布。
+
+On Aide builds advertising `host.component.codex-bridge`, use the five controls in this workbench. The full Aide distribution includes the verified host component and starts it automatically. No separate manager download, manager page or pairing code is required. Existing Node.js 18+ and a signed-in Codex CLI are prerequisites. Keys appear only after an explicit action, masked; copy them into encrypted model-provider settings. The older standalone flow below is compatibility documentation for older Aide launchers.
+
+---
+
 # Codex Bridge · Codex 模型桥接
 
 独立 Aide 插件与本机桥接程序，支持 Windows、macOS、Linux。当前公开预览版 **0.3.4**；实际发布状态以[Release](https://github.com/skyelan1999/aide-pkg-CodexBridge/releases)为准。
