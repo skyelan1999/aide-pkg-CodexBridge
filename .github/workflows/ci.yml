@@ -28,6 +28,7 @@ jobs:
       - run: node scripts/build.cjs
       - run: python scripts/package-codex-bridge.py --out dist
       - run: node --test scripts/*.test.cjs
+      - run: python3 -m unittest scripts/test_release_publish.py
       - run: git diff --exit-code
 
   manager:

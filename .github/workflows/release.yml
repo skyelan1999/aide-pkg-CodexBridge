@@ -1,0 +1,81 @@
+name: Publish checked draft release
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Existing draft version (without v)
+        required: true
+      draft_id:
+        description: Existing unpublished draft release ID
+        required: true
+      source_sha:
+        description: Exact source commit on main
+        required: true
+      tested_sha:
+        description: Exact successful cross-platform CI head with identical tree
+        required: true
+      ci_run:
+        description: Successful cross-platform CI run ID
+        required: true
+permissions:
+  contents: read
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      actions: read
+    env:
+      RELEASE_VERSION: ${{ inputs.version }}
+      RELEASE_SOURCE_SHA: ${{ inputs.source_sha }}
+      RELEASE_TESTED_SHA: ${{ inputs.tested_sha }}
+      RELEASE_CI_RUN: ${{ inputs.ci_run }}
+      RELEASE_DRAFT_ID: ${{ inputs.draft_id }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.0'
+          cache: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Retain checked publisher and validate source identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m unittest scripts/test_release_publish.py
+          cp scripts/publish-release.py "$RUNNER_TEMP/publish-release.py"
+          python3 -c 'import os,re; assert re.fullmatch(r"[0-9a-f]{40}",os.environ["RELEASE_SOURCE_SHA"]); assert re.fullmatch(r"[0-9a-f]{40}",os.environ["RELEASE_TESTED_SHA"]); assert re.fullmatch(r"\d+\.\d+\.\d+",os.environ["RELEASE_VERSION"])'
+          git fetch --no-tags origin "$RELEASE_SOURCE_SHA" "$RELEASE_TESTED_SHA"
+          git checkout --detach "$RELEASE_SOURCE_SHA"
+          git merge-base --is-ancestor "$RELEASE_SOURCE_SHA" origin/main
+          test "$(git rev-parse "$RELEASE_SOURCE_SHA^{tree}")" = "$(git rev-parse "$RELEASE_TESTED_SHA^{tree}")"
+      - name: Rebuild and verify exact source
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/build.cjs
+          python3 scripts/package-codex-bridge.py --out dist
+          npm test
+          cp "dist/codex-bridge-$RELEASE_VERSION.zip" cmd/host-manager/payload.zip
+          (cd cmd/host-manager && go test -race ./... && go vet ./...)
+          for target in linux darwin windows; do
+            for arch in amd64 arm64; do
+              python3 scripts/build-host-manager.py --os "$target" --arch "$arch"
+            done
+          done
+          ./dist/managers/linux-amd64-CodexBridgeManager --version
+          git diff --exit-code
+      - name: Upload, download-verify, then publish prerelease
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 "$RUNNER_TEMP/publish-release.py" --repo "$GITHUB_REPOSITORY" --version "$RELEASE_VERSION" --source "$RELEASE_SOURCE_SHA" --tested "$RELEASE_TESTED_SHA" --ci-run "$RELEASE_CI_RUN" --release-id "$RELEASE_DRAFT_ID" --publish
