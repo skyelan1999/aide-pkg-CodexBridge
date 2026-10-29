@@ -11,3 +11,5 @@ For 0.3.1, draft427514038 targets948b345d32e4a833f8248641eeb1fc2f6e6cc0ca; CI408
 Verification: four local publisher unit tests pass. GitHub Actions publication remains pending normal main integration and explicit dispatch. Draft lookup uses the release ID because the unpublished tag REST endpoint returns404; direct ID427514038 was verified as an unpublished0.3.1 draft with zero assets.
 
 The publisher checks builder sidecars before normalizing Linux gzip headers (mtime0, empty gzip filename), then regenerates their sidecars. Tar payload bytes remain unchanged; retries of the same source do not differ only because of gzip timestamps. It rejects unexpected draft asset names before downloading them.
+
+0.3.2 was independently published at source65e1ddd with all six complete native archives. Public assets and actual Linux native-page flows were independently verified in [post-publication acceptance](ACCEPTANCE-0.3.2-POSTPUBLICATION.md). The older0.3.1 draft is retained as historical work; do not dispatch it merely to duplicate the now published0.3.2 fixes. New source versions containing verify-host-bundle.py also run its complete-bundle check in the publisher.
