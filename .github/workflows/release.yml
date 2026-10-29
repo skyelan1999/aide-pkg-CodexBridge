@@ -70,6 +70,9 @@ jobs:
           for target in linux darwin windows; do
             for arch in amd64 arm64; do
               python3 scripts/build-host-manager.py --os "$target" --arch "$arch"
+              if [ -f scripts/verify-host-bundle.py ]; then
+                python3 scripts/verify-host-bundle.py --os "$target" --arch "$arch"
+              fi
             done
           done
           ./dist/managers/linux-amd64-CodexBridgeManager --version
