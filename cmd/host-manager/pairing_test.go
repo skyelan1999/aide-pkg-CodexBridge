@@ -113,3 +113,13 @@ func TestPairingBoundedBodyAndOwnerOnly(t *testing.T) {
 		t.Fatal(w.Code)
 	}
 }
+
+func TestQuotaRequiresAuthentication(t *testing.T) {
+	m := fixture(t)
+	if w := call(m, "GET", "/api/usage", "", "", ""); w.Code != 401 {
+		t.Fatal(w.Code)
+	}
+	if w := call(m, "GET", "/api/usage", "", m.control, ""); w.Code != 409 {
+		t.Fatal("uninstalled host must stay unavailable", w.Code)
+	}
+}

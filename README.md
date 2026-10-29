@@ -183,3 +183,15 @@ Official protocol reference: [Codex app-server](https://learn.chatgpt.com/docs/a
 ## Issues / 问题与需求
 
 All public Aide plugins are part of Aide's functionality. Track bugs, feature requests and acceptance summaries centrally in [Aide Issues](https://github.com/skyelan1999/aide/issues), with the `Codex Bridge` component, plugin/host/Aide versions, reproduction and evidence. Implementation, design and delivery artifacts remain in this repository. Current setup work is [Aide #600](https://github.com/skyelan1999/aide/issues/600); native executable discovery is [Aide #602](https://github.com/skyelan1999/aide/issues/602). Public reports must not contain credentials, real prompts or private implementation details.
+
+## Account quota percentages / 账户剩余额度
+
+Open the plugin workbench → **Account quota · Connection settings**, after pairing and starting the host. The panel reads once when entering a ready connection; **Refresh quota** reads again. It displays each returned account bucket and its primary/secondary window separately, with remaining percentage, reset time and observation time. It does not poll in the background.
+
+打开插件工作台 → **账户额度 · 连接设置**。完成连接并启动宿主后，进入页面时读取一次，也可点击“刷新额度”。逐项显示账户额度窗口的剩余百分比、重置时间和查询时间；没有后台轮询。
+
+The authenticated local route is `GET /v1/usage`, using the existing model bridge key; the paired manager exposes the sanitized result through `/api/usage` and `codex_bridge_usage`. It calls only Codex `account/rateLimits/read`, starts no inference turn, reads no auth files, changes no account/provider settings, and never consumes reset credits. Multi-bucket responses take priority over the legacy single bucket. Remaining percentage is `clamp(100 - usedPercent, 0, 100)`. Null/missing/unsupported data stays unavailable; a failed refresh clears the old percentages. Window values describe shared account quota, not monetary balance, a conversation's token usage, model entitlement or guaranteed inference access.
+
+该功能当前在插件工作台的连接设置中展示，不会修改 Aide 公共模型设置弹窗或把额度伪装成金额余额。API-key-only 登录、旧版 CLI、上游失败或未返回窗口时明确显示不可用。它不自动复制、刷新或替换登录令牌。
+
+Protocol reference: [official OpenAI App Server documentation](https://learn.chatgpt.com/docs/app-server#6-rate-limits-chatgpt). Central request and current acceptance: [Aide #604](https://github.com/skyelan1999/aide/issues/604), [quota acceptance](docs/QUOTA-ACCEPTANCE-0.3.0.md). The 0.3.0 package is a candidate until a corresponding Release is published.

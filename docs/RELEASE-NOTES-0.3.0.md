@@ -9,3 +9,7 @@ The two-minute code works once, has a bounded failed-attempt budget, and grants 
 All component versions derive from the independent plugin manifest version. Both plugin and native manager must be updated for this connection flow. Existing provider settings, host configuration, model API key, Codex login and Aide/9999 are not overwritten. Node.js and an authenticated Codex installation remain prerequisites.
 
 Local tests, browser fixtures, cross-builds, CI, remote publication and real Windows/Linux devices are separate acceptance states. This document alone does not announce publication.
+
+## Account quota / 账户额度
+
+The connection-settings panel now shows remaining quota percentages per Codex bucket/window, reset time and observation time, with manual refresh and one read on ready page entry. Unknown data stays unavailable. This is account quota rather than currency balance. Requires the matching host manager/bridge update. See Aide #604 and QUOTA-ACCEPTANCE-0.3.0.md for the actual test and live-read limitations.

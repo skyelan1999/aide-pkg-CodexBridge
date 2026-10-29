@@ -18,3 +18,5 @@ Screenshots: [connected workbench](evidence/guided-workbench-0.3.0.png), [Englis
 No real account inference, real Windows/Linux device matrix or full Aide provider configuration was performed in this task. The updated full-host `scripts/native-acceptance.cjs` is prepared but was not run; its previous credential-field fixture is replaced with one-use pairing. No Aide core, 9999, MIXSoul, actual provider/account settings or production bridge deployment was changed by this candidate. Release and marketplace publication have not been performed. Existing 0.2.0 remains the published version until a separate delivery is completed.
 
 Pairing tokens are permission-restricted private files, not encrypted vault entries. Legacy `bridgeKey`/`managerKey` settings are ignored and require explicit manual removal if previously populated. Updating requires quitting the old manager and updating both components. Keep these limitations in any publication summary.
+
+The later quota feature changes the payload and native archives. Use [quota acceptance](QUOTA-ACCEPTANCE-0.3.0.md) and QUOTA-ACCEPTANCE-0.3.0.json for the final candidate; hashes in the original receipt are historical.

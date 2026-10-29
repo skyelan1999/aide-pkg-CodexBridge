@@ -16,7 +16,7 @@
           "docker"
         ],
         "default": "auto",
-        "description": "通常保留自动识别。安装、连接与测试请打开插件工作台；这里不填写密钥。 / Use the workbench for setup; no keys belong here."
+        "description": "通常保留自动识别。安装、连接、额度百分比与测试请打开插件工作台的连接设置；这里不填写密钥。 / Open workbench connection settings for setup and quota percentages; no keys belong here."
       }
     },
     "additionalProperties": false
@@ -33,7 +33,8 @@
       "codex_bridge_manager_status",
       "codex_bridge_host_action",
       "codex_bridge_pair",
-      "codex_bridge_disconnect"
+      "codex_bridge_disconnect",
+      "codex_bridge_usage"
     ]
   }
 }

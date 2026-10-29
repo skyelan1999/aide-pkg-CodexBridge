@@ -143,7 +143,7 @@ func (m *manager) pairingOwner(w http.ResponseWriter, r *http.Request, route str
 	m.pairCode = ""
 	reply(w, 200, map[string]bool{"revoked": true})
 }
-func (m *manager) models(w http.ResponseWriter, r *http.Request) {
+func (m *manager) bridgeRead(w http.ResponseWriter, r *http.Request, route string) []byte {
 	m.mu.Lock()
 	cfg, e := m.config()
 	p := filepath.Join(m.root, "data", "bridge.key")
@@ -157,27 +157,34 @@ func (m *manager) models(w http.ResponseWriter, r *http.Request) {
 	m.mu.Unlock()
 	if e != nil {
 		reply(w, 409, map[string]string{"error": "Install and start the host bridge first / 请先安装并启动宿主桥接"})
-		return
+		return nil
 	}
 	port, ok := cfg["port"].(float64)
 	if !ok || port < 1 || port > 65535 || port != float64(int(port)) {
 		reply(w, 409, map[string]string{"error": "Invalid bridge port"})
-		return
+		return nil
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
 	defer cancel()
-	req, _ := http.NewRequestWithContext(ctx, "GET", "http://127.0.0.1:"+strconv.Itoa(int(port))+"/v1/models", nil)
+	req, _ := http.NewRequestWithContext(ctx, "GET", "http://127.0.0.1:"+strconv.Itoa(int(port))+route, nil)
 	req.Header.Set("Authorization", "Bearer "+strings.TrimSpace(string(key)))
 	client := http.Client{CheckRedirect: func(*http.Request, []*http.Request) error { return errors.New("Redirect refused") }}
 	res, err := client.Do(req)
 	if err != nil {
-		reply(w, 502, map[string]string{"error": "Model catalog unavailable; check that the bridge is running"})
-		return
+		reply(w, 502, map[string]string{"error": "Host data unavailable; check that the bridge is running"})
+		return nil
 	}
 	defer res.Body.Close()
 	b, err := io.ReadAll(io.LimitReader(res.Body, 65537))
 	if err != nil || len(b) > 65536 || res.StatusCode != 200 {
-		reply(w, 502, map[string]string{"error": "Bridge rejected model catalog request"})
+		reply(w, 502, map[string]string{"error": "Host bridge could not return account/model data"})
+		return nil
+	}
+	return b
+}
+func (m *manager) models(w http.ResponseWriter, r *http.Request) {
+	b := m.bridgeRead(w, r, "/v1/models")
+	if b == nil {
 		return
 	}
 	var result struct {
@@ -201,4 +208,32 @@ func (m *manager) models(w http.ResponseWriter, r *http.Request) {
 		ids = append(ids, map[string]string{"id": id})
 	}
 	reply(w, 200, map[string]any{"service": "aide-codex-bridge-manager", "version": version, "models": ids})
+}
+
+// usage decodes into a fixed public schema rather than forwarding arbitrary account data.
+func (m *manager) usage(w http.ResponseWriter, r *http.Request) {
+	b := m.bridgeRead(w, r, "/v1/usage")
+	if b == nil {
+		return
+	}
+	type window struct {
+		UsedPercent        *float64 `json:"usedPercent"`
+		WindowDurationMins *float64 `json:"windowDurationMins"`
+		ResetsAt           *int64   `json:"resetsAt"`
+	}
+	var result struct {
+		Buckets []struct {
+			ID        string  `json:"id"`
+			Label     string  `json:"label"`
+			Primary   *window `json:"primary"`
+			Secondary *window `json:"secondary"`
+		} `json:"buckets"`
+		CheckedAt string `json:"checkedAt"`
+		Reason    string `json:"reason"`
+	}
+	if json.Unmarshal(b, &result) != nil || len(result.Buckets) > 32 {
+		reply(w, 502, map[string]string{"error": "Invalid quota response"})
+		return
+	}
+	reply(w, 200, map[string]any{"service": "aide-codex-bridge-manager", "version": version, "usage": result})
 }

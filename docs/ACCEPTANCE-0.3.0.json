@@ -110,5 +110,6 @@
     ],
     "remainingOpenPluginIssues": 0,
     "newAttachmentIssue": "https://github.com/skyelan1999/aide/issues/601"
-  }
+  },
+  "supersededBy": "QUOTA-ACCEPTANCE-0.3.0.json (quota feature and final rebuilt assets; historical hashes below retained)"
 }

@@ -173,7 +173,7 @@ func TestManagedRuntimeStartStopWithSyntheticCodex(t *testing.T) {
 		t.Skip("Node unavailable")
 	}
 	fake := filepath.Join(m.root, "fake-codex.cjs")
-	if e := os.WriteFile(fake, []byte(`if(process.argv.includes('--version')){console.log('codex-cli 0.0.0-fixture');process.exit(0)}const r=require('node:readline').createInterface({input:process.stdin});r.on('line',line=>{const q=JSON.parse(line);if(q.id)console.log(JSON.stringify({id:q.id,result:q.method==='model/list'?{data:[{id:'synthetic-manager-model'}]}:{}}))});`), 0600); e != nil {
+	if e := os.WriteFile(fake, []byte(`if(process.argv.includes('--version')){console.log('codex-cli 0.0.0-fixture');process.exit(0)}const r=require('node:readline').createInterface({input:process.stdin});r.on('line',line=>{const q=JSON.parse(line);if(q.id)console.log(JSON.stringify({id:q.id,result:q.method==='model/list'?{data:[{id:'synthetic-manager-model'}]}:q.method==='account/rateLimits/read'?{rateLimits:{primary:{usedPercent:25,windowDurationMins:300,resetsAt:1793250000},secondary:{usedPercent:42,windowDurationMins:10080,resetsAt:1793800000}}}:{}}))});`), 0600); e != nil {
 		t.Fatal(e)
 	}
 	l, e := net.Listen("tcp", "127.0.0.1:0")
@@ -239,6 +239,10 @@ func TestManagedRuntimeStartStopWithSyntheticCodex(t *testing.T) {
 	r.Body.Close()
 	if r.StatusCode != 200 || !bytes.Contains(body, []byte("synthetic-manager-model")) {
 		t.Fatal(r.StatusCode, string(body))
+	}
+	usage := call(m, "GET", "/api/usage", "", m.control, "")
+	if usage.Code != 200 || !strings.Contains(usage.Body.String(), `"usedPercent":25`) || !strings.Contains(usage.Body.String(), `"windowDurationMins":10080`) || strings.Contains(usage.Body.String(), string(key)) {
+		t.Fatal("managed quota path failed", usage.Code, usage.Body.String())
 	}
 	m.mu.Lock()
 	e = m.stop()

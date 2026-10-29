@@ -10,6 +10,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
 const { resolveLaunch, terminate } = require('./launch.cjs');
+const { normalizeRateLimits } = require('../quota.cjs');
 
 class BridgeError extends Error {
   constructor(message, status = 502) { super(message); this.status = status; }
@@ -213,7 +214,7 @@ function createServer(options) {
       const expected = Buffer.from('Bearer ' + options.key);
       if (given.length !== expected.length || !timingSafeEqual(given, expected)) return json(401, { error: { message: 'Invalid bridge key', type: 'authentication_error' } });
       const url = new URL(req.url, 'http://localhost');
-      if (!((req.method === 'GET' && url.pathname === '/v1/models') || (req.method === 'POST' && url.pathname === '/v1/chat/completions'))) return json(404, { error: { message: 'Unknown endpoint' } });
+      if (!((req.method === 'GET' && ['/v1/models','/v1/usage'].includes(url.pathname)) || (req.method === 'POST' && url.pathname === '/v1/chat/completions'))) return json(404, { error: { message: 'Unknown endpoint' } });
       let body, tools;
       if (req.method === 'POST') {
         const chunks = []; let size = 0;
@@ -232,6 +233,16 @@ function createServer(options) {
       clients.add(rpc);
       const timeout = new Promise((_, reject) => { timer = setTimeout(() => { reject(new BridgeError('Codex request timed out', 504)); controller.abort(); rpc.close(); }, options.timeout); });
       const cancelled = new Promise((_, reject) => controller.signal.addEventListener('abort', () => reject(new BridgeError('Client disconnected')), { once: true }));
+      if (req.method === 'GET' && url.pathname === '/v1/usage') {
+        try {
+          const result = await Promise.race([(async () => { await rpc.initialize(); return rpc.call('account/rateLimits/read', {}); })(), timeout, cancelled]);
+          return json(200, normalizeRateLimits(result));
+        } catch (error) {
+          if (controller.signal.aborted) throw error;
+          // RPC errors can contain account/config details. Do not expose them.
+          return json(200, {available:false,buckets:[],checkedAt:new Date().toISOString(),reason:'unavailable'});
+        }
+      }
       if (req.method === 'GET') {
         const result = await Promise.race([(async () => { await rpc.initialize(); return rpc.call('model/list', {}); })(), timeout, cancelled]);
         return json(200, { object: 'list', data: result.data.map(m => ({ id: m.id, object: 'model', owned_by: 'codex' })), bridge_note: 'Catalog only; access requires a successful inference turn.' });
