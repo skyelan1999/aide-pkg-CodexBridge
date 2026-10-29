@@ -1,4 +1,4 @@
-import importlib.util,unittest
+import gzip,hashlib,importlib.util,tempfile,unittest
 from pathlib import Path
 spec=importlib.util.spec_from_file_location('publisher',Path(__file__).with_name('publish-release.py'));publisher=importlib.util.module_from_spec(spec);spec.loader.exec_module(publisher)
 class DraftIdentity(unittest.TestCase):
@@ -15,4 +15,12 @@ class DraftIdentity(unittest.TestCase):
   self.assertIs(publisher.validate_ci(good,'a'*40),good)
   for patch in [{'conclusion':'cancelled'},{'conclusion':None},{'head_sha':'b'*40},{'name':'Unrelated workflow'}]:
    with self.assertRaises(ValueError):publisher.validate_ci({**good,**patch},'a'*40)
+ def test_gzip_normalization_preserves_payload_and_retry_bytes(self):
+  with tempfile.TemporaryDirectory() as root:
+   first=Path(root)/'first.tar.gz';second=Path(root)/'second.tar.gz';data=b'owned archive fixture'*100
+   first.write_bytes(gzip.compress(data,mtime=1));second.write_bytes(gzip.compress(data,mtime=2))
+   publisher.normalize_gzip(first);publisher.normalize_gzip(second)
+   self.assertEqual(first.read_bytes(),second.read_bytes());self.assertEqual(gzip.decompress(first.read_bytes()),data)
+   before=first.read_bytes();publisher.normalize_gzip(first);self.assertEqual(first.read_bytes(),before)
+   self.assertEqual(first.with_name(first.name+'.sha256').read_text().split()[0],hashlib.sha256(before).hexdigest())
 if __name__=='__main__':unittest.main()

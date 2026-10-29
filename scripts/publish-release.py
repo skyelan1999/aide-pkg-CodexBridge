@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Publish only a checked draft from an explicit source/CI identity. Never overwrite assets."""
-import argparse,hashlib,json,pathlib,re,subprocess,tempfile
+import argparse,gzip,hashlib,io,json,pathlib,re,subprocess,tempfile
 
 def validate_release(release,version,source):
  if not re.fullmatch(r'\d+\.\d+\.\d+',version) or not re.fullmatch(r'[0-9a-f]{40}',source):raise ValueError('Invalid release identity')
@@ -12,6 +12,10 @@ def validate_ci(run,tested):
  return run
 
 def file_digest(file):return hashlib.sha256(file.read_bytes()).hexdigest()
+def normalize_gzip(file):
+ payload=gzip.decompress(file.read_bytes());buffer=io.BytesIO()
+ with gzip.GzipFile(fileobj=buffer,mode='wb',filename='',mtime=0,compresslevel=9) as compressed:compressed.write(payload)
+ file.write_bytes(buffer.getvalue());file.with_name(file.name+'.sha256').write_text(file_digest(file)+'  '+file.name+'\n')
 def gh(*args):return subprocess.check_output(['gh',*args],text=True)
 def api(repo,route):return json.loads(gh('api','repos/'+repo+'/'+route))
 def main():
@@ -35,8 +39,11 @@ def main():
   if file.name.endswith('.sha256'):
    base=file.with_suffix('');record=file.read_text().split()
    if len(record)!=2 or record[0]!=file_digest(base) or record[1]!=base.name:raise ValueError('Incorrect checksum sidecar: '+file.name)
+ for file in files:
+  if file.name.endswith('.tar.gz'):normalize_gzip(file)
  checksums=pathlib.Path('dist/SHA256SUMS');checksums.write_text(''.join(file_digest(file)+'  '+file.name+'\n' for file in files if not file.name.endswith('.sha256')));files.append(checksums)
  existing={asset['name']:asset for asset in release.get('assets',[])}
+ if set(existing)-{file.name for file in files}:raise ValueError('Unexpected existing draft assets')
  for file in files:
   if file.name in existing:
    with tempfile.TemporaryDirectory() as directory:
