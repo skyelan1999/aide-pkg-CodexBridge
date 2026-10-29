@@ -620,7 +620,17 @@ func (m *manager) configuredCodexFound() bool {
 	return e == nil && info.Mode().IsRegular()
 }
 func (m *manager) status() map[string]any {
-	return map[string]any{"service": "aide-codex-bridge-manager", "version": version, "platform": runtime.GOOS, "arch": runtime.GOARCH, "installed": m.installed(), "running": m.child != nil, "externalBridge": m.child == nil && m.externalRunning(), "nodeFound": executable("node") != "", "codexFound": executable("codex") != "" || m.configuredCodexFound(), "lastError": m.last}
+	port := 8787
+	codexFound := executable("codex") != ""
+	if cfg, e := m.config(); e == nil {
+		if p, ok := cfg["port"].(float64); ok && p >= 1 && p <= 65535 && p == float64(int(p)) {
+			port = int(p)
+		}
+		if c, ok := cfg["codex"].(string); ok && c != "" && c != "codex" {
+			codexFound = executable(c) != "" || regular(c) == nil
+		}
+	}
+	return map[string]any{"port": port, "service": "aide-codex-bridge-manager", "version": version, "platform": runtime.GOOS, "arch": runtime.GOARCH, "installed": m.installed(), "running": m.child != nil, "externalBridge": m.child == nil && m.externalRunning(), "nodeFound": executable("node") != "", "codexFound": codexFound, "lastError": m.last}
 }
 func reply(w http.ResponseWriter, s int, d any) {
 	w.Header().Set("Content-Type", "application/json")
@@ -712,6 +722,42 @@ func (m *manager) handler() http.Handler {
 			d := m.status()
 			m.mu.Unlock()
 			reply(w, 200, d)
+			return
+		}
+		if r.URL.Path == "/api/key" && r.Method == "POST" {
+			if !owner || r.Header.Get("X-Manager-Owner-UI") != "1" {
+				reply(w, 403, map[string]string{"error": "Use the native manager window"})
+				return
+			}
+			var in struct{}
+			if !decodePair(r, w, &in) {
+				return
+			}
+			m.op.Lock()
+			defer m.op.Unlock()
+			m.mu.Lock()
+			defer m.mu.Unlock()
+			if m.closing || !m.installed() {
+				reply(w, 409, map[string]string{"error": "Install host first / 请先安装宿主程序"})
+				return
+			}
+			p := filepath.Join(m.root, "data", "bridge.key")
+			if e := noLinks(p); e != nil {
+				reply(w, 409, map[string]string{"error": "Invalid key path"})
+				return
+			}
+			_, statErr := os.Stat(p)
+			created := os.IsNotExist(statErr)
+			if created && (m.child != nil || m.externalRunning()) {
+				reply(w, 409, map[string]string{"error": "Stop the bridge before generating a missing key / 请先停止桥接再生成缺失密钥"})
+				return
+			}
+			value, e := ensureKey(p)
+			if e != nil {
+				reply(w, 409, map[string]string{"error": "Cannot read or generate local key"})
+				return
+			}
+			reply(w, 200, map[string]any{"bridgeKey": value, "created": created})
 			return
 		}
 		if r.URL.Path == "/api/provider" && r.Method == "GET" { // Owner setup UI only; plugin tool never proxies this route.
