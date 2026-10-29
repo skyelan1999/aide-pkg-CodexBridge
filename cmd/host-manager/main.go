@@ -868,12 +868,19 @@ func (m *manager) handler() http.Handler {
 }
 func main() {
 	if err := runManager(); err != nil {
-		reportStartupError(err)
+		if len(os.Args) > 1 && os.Args[1] == "--aide-managed" {
+			fmt.Fprintln(os.Stderr, "Codex host component:", err)
+		} else {
+			reportStartupError(err)
+		}
 		os.Exit(1)
 	}
 }
 
 func runManager() error {
+	if len(os.Args) > 1 && os.Args[1] == "--aide-managed" {
+		return runAideManaged(os.Args[2:])
+	}
 	if len(os.Args) > 1 && os.Args[1] == "--version" {
 		fmt.Println("Codex Bridge Manager " + version)
 		return nil
