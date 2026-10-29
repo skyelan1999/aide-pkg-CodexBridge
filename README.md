@@ -2,7 +2,7 @@
 
 An independent Aide plugin and optional local host service. Connect an installed, signed-in Codex CLI to Aide's **OpenAI-compatible Chat Completions** provider. No Aide core changes, Codex binaries, account tokens or user chat histories are bundled.
 
-独立插件 + 宿主机服务，把本机 Codex 接入 Aide 模型提供商。支持 Windows、macOS、Linux 的安装与启动入口；无需 PowerShell。插件采用独立三段式版本号，当前候选为 **0.3.0**，不复用 Aide RC 号。公开 Release 状态以仓库发行页为准。
+独立插件 + 宿主机服务，把本机 Codex 接入 Aide 模型提供商。支持 Windows、macOS、Linux 的安装与启动入口；无需 PowerShell。插件采用独立三段式版本号，当前修复候选为 **0.3.1**，不复用 Aide RC 号。公开 Release 状态以仓库发行页为准。
 
 ## Guided setup / 引导式连接
 
@@ -194,4 +194,12 @@ The authenticated local route is `GET /v1/usage`, using the existing model bridg
 
 该功能当前在插件工作台的连接设置中展示，不会修改 Aide 公共模型设置弹窗或把额度伪装成金额余额。API-key-only 登录、旧版 CLI、上游失败或未返回窗口时明确显示不可用。它不自动复制、刷新或替换登录令牌。
 
-Protocol reference: [official OpenAI App Server documentation](https://learn.chatgpt.com/docs/app-server#6-rate-limits-chatgpt). Central request and current acceptance: [Aide #604](https://github.com/skyelan1999/aide/issues/604), [quota acceptance](docs/QUOTA-ACCEPTANCE-0.3.0.md). The 0.3.0 package is a candidate until a corresponding Release is published.
+Protocol reference: [official OpenAI App Server documentation](https://learn.chatgpt.com/docs/app-server#6-rate-limits-chatgpt). Central request and current acceptance: [Aide #604](https://github.com/skyelan1999/aide/issues/604), [quota acceptance](docs/QUOTA-ACCEPTANCE-0.3.0.md). Published availability is shown on the repository Releases page; the 0.3.1 CLI-discovery fix is a candidate until its own Release is published.
+
+## GUI cannot find Codex CLI / 图形启动找不到 CLI（#602）
+
+管理器不依赖交互式终端的 shell 配置。先点击“诊断”：除当前 PATH 外，会查找用户的 `.local/bin`、`.npm-global/bin`、Volta、NVM（最新 32 个正常版本）、macOS Homebrew/应用内 CLI 及 Windows npm 常见目录。验证官方 CLI 的 `--version` 成功后，管理器才保存实际可执行文件或官方 npm JS 入口的绝对路径。失败不会改写配置；诊断期间配置若被外部编辑，会要求重新诊断，保留该次编辑。未知配置字段与数值保持。
+
+如使用自定义安装位置，修改宿主安装目录 `config.json` 中的 `codex` 为可执行文件的绝对路径，再点“诊断”；只填写文件路径，不填写 shell 命令。Windows npm `.cmd` 只用于定位相邻官方 `@openai/codex/bin/codex.js`，不会执行 shim 或调用 PowerShell。Node.js 仍需安装；管理器也支持在 NVM/Volta 常见位置查找 Node。
+
+升级时使用同版本插件与宿主管理器：停止桥接 → 安装/更新 → 诊断 → 启动。模型提供商配置、桥接密钥、网络与 Codex 登录不会因此被重建或替换。此修复的 Linux 原生页面、合成 CLI 与跨平台构建验收见仓库 `docs/ACCEPTANCE-0.3.1.md`；真实 macOS/Windows GUI 和账号模型目录仍需实际环境确认。
