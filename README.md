@@ -1,12 +1,12 @@
 # Codex Bridge · Codex 模型桥接
 
-独立 Aide 插件与本机桥接程序，支持 Windows、macOS、Linux。当前补丁候选 **0.3.3**；实际发布状态以[Release](https://github.com/skyelan1999/aide-pkg-CodexBridge/releases)为准。
+独立 Aide 插件与本机桥接程序，支持 Windows、macOS、Linux。当前公开预览版 **0.3.4**；实际发布状态以[Release](https://github.com/skyelan1999/aide-pkg-CodexBridge/releases)为准。
 
 ## Windows：解压后直接打开
 
 下载对应系统/架构的宿主安装包，**完整解压**，双击 **CodexBridgeManager.exe**。不要在 ZIP 内直接运行。
 
-安装包已包含宿主管理器、内嵌桥接程序，以及同版 `codex-bridge-0.3.3.zip` 插件包；无需克隆仓库或另找源码。需要插件工作台时，将这个插件 ZIP 导入 Aide 即可。宿主安装不下载仓库、不使用 PowerShell。
+安装包已包含宿主管理器、内嵌桥接程序，以及同版 `codex-bridge-0.3.4.zip` 插件包；无需克隆仓库或另找源码。需要插件工作台时，将这个插件 ZIP 导入 Aide 即可。宿主安装不下载仓库、不使用 PowerShell。
 
 macOS 打开包内的 **Codex Bridge Manager.app**；Linux 打开 **CodexBridgeManager**。运行桥接需要本机已有 **Node.js 18+** 和已登录的 **Codex CLI**；这两个第三方依赖及账号凭据不包含在发行包中，也不会被静默安装或修改。
 
@@ -63,3 +63,9 @@ Public-plugin bugs, requests and acceptance summaries belong in [Aide Issues](ht
 0.3.3 会说明按钮为什么暂时不能执行；连接失败、失效的管理器页面和请求超时均显示错误，不再只保持“尚未安装”。请求超时不表示后台操作已取消，请等待状态检查后再决定是否重试。若页面刷新后失去连接，请重新双击管理器。Windows 请使用新版 Edge/Chrome/Firefox，不使用 Internet Explorer。
 
 Blocked actions now explain the unmet prerequisite without issuing a mutation. Lost authorization, unavailable managers and stalled requests produce visible recovery messages. Timeouts do not cancel a server-side installation or automatically retry it. Reopen the native application after a page reload loses authorization. On Windows use a current Edge, Chrome or Firefox, not Internet Explorer.
+
+### Aide 上传兼容 / Aide upload compatibility
+
+0.3.4 将插件入口编译为自包含文件，修复上传 ZIP 时 `Cannot find module './connection.cjs'`。在 Aide 上传本包的 `codex-bridge-0.3.4.zip`，不是 GitHub 自动生成的 Source code ZIP，也不是宿主管理器外层安装包。现有 Aide 无需为此升级。
+
+The generated plugin entry is self-contained for Aide's entry-only upload validator. Import `codex-bridge-0.3.4.zip`, not the GitHub source archive or the outer native-manager archive. This patch needs no Aide core update.
