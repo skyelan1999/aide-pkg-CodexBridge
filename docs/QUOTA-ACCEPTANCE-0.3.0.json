@@ -19,50 +19,51 @@
     "scripts/quota.test.cjs": "85222410a80fb8e4376499bbe922100d2dc79a9e16670e3519e7db4e0bb78f3e",
     "scripts/plugin.test.cjs": "69157399989b800b040fa6d5bb0f3d77ebb62b7a72a14ee627083ef99adf5666",
     "scripts/package-codex-bridge.py": "1b64410bc688d0631eb6c89177e8b4c8a36a17af7fae94d673f8deb729923a1d",
-    ".github/workflows/ci.yml": "ea92b7c9baf6dd805bd0a1ce94844cf62ce67c0c6d211a605e67ef535d29c935"
+    ".github/workflows/ci.yml": "ea92b7c9baf6dd805bd0a1ce94844cf62ce67c0c6d211a605e67ef535d29c935",
+    "README.md": "dd23b2cf47fa9f90d99d7f80e5ae81d6e4f282d89d31352b3f29086c584c4733"
   },
-  "pluginSHA256": "e9a3109bf10b03dc6690b754d776a39ad079083757a5e8b28cc9c50d0459bd76",
+  "pluginSHA256": "c2a80f29c8d2036b347d6c19cfcb48fa6dfb6598b0f52747163a4d53c4534345",
   "nativeAssets": [
     {
       "target": "windows",
       "arch": "amd64",
       "archive": "codex-bridge-manager-0.3.0-windows-amd64.zip",
-      "sha256": "5d7772f48aab90bf48b7c44cecffc7864db709cc50be8d529feadb58ced0ddbc",
+      "sha256": "e1896991a309f0029c029fc8b521641037098b062cf23a1c91223207d24b2d3c",
       "embeddedPayloadMatches": true
     },
     {
       "target": "windows",
       "arch": "arm64",
       "archive": "codex-bridge-manager-0.3.0-windows-arm64.zip",
-      "sha256": "d025de48353fdd4528731fbf1d228de3d441718dc31c6f0528e18c740b9fa490",
+      "sha256": "47f5122a7a9d9fb15d2347ea384a6fbd9b71a423dd8c098f5376e4e9b31c924b",
       "embeddedPayloadMatches": true
     },
     {
       "target": "darwin",
       "arch": "amd64",
       "archive": "codex-bridge-manager-0.3.0-darwin-amd64.zip",
-      "sha256": "4be0c4fe1e074c3381d30de189c616b10360e97974a5ad4f1ca3b5fdf79eb932",
+      "sha256": "ee3cd701879edb98c7eb8f9c64c5968500f041eb156a8ce22545795971b79708",
       "embeddedPayloadMatches": true
     },
     {
       "target": "darwin",
       "arch": "arm64",
       "archive": "codex-bridge-manager-0.3.0-darwin-arm64.zip",
-      "sha256": "6e9d9abc903b349286dc43a0acfc9656d7a8a8fa20e204aa0d7074dd808571ba",
+      "sha256": "54173f7891f73fb68a0a2e5a22d9ae1382a41266d1a93fb910ccc349b7ed8d53",
       "embeddedPayloadMatches": true
     },
     {
       "target": "linux",
       "arch": "amd64",
       "archive": "codex-bridge-manager-0.3.0-linux-amd64.tar.gz",
-      "sha256": "c839c663991dce392f0917c0114d7f33e68c0a20ca785309ab2004ee580a27f3",
+      "sha256": "b8dea60c208c0d96db694742e977cb2a6ae99049a750697b5e40257bca0002ff",
       "embeddedPayloadMatches": true
     },
     {
       "target": "linux",
       "arch": "arm64",
       "archive": "codex-bridge-manager-0.3.0-linux-arm64.tar.gz",
-      "sha256": "32ab57e02787110b816b868303eb868d87bc63ae29436926a59181665308d271",
+      "sha256": "889a25bb27233d386aa1f521fddbad3f8e1a75d3286fa530bc3a7dc0122f92ce",
       "embeddedPayloadMatches": true
     }
   ],
