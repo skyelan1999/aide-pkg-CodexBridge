@@ -122,21 +122,24 @@ function repairPermissions(target = root) {
   for (const file of files) fs.chmodSync(file, 0o755);
   console.log('Launcher permissions repaired (0755) / 启动脚本权限已修复: ' + files.length + '\nConfiguration, credentials and system quarantine settings were not changed.');
 }
-function doctor() {
-  console.log('Platform:', process.platform, process.arch, 'Node:', process.version);
+function doctor(json = false) {
+  if (!json) console.log('Platform:', process.platform, process.arch, 'Node:', process.version);
   const file = path.join(root, 'config.json');
   const c = JSON.parse(fs.readFileSync(fs.existsSync(file) ? file : path.join(root, 'config.example.json'), 'utf8'));
-  const launch = resolveLaunch(c.codex);
-  const result = spawnSync(launch.command, [...launch.prefix, '--version'], { encoding: 'utf8', timeout: 10000, windowsHide: true });
-  if (result.status !== 0) throw new Error('Cannot run Codex executable; install Codex CLI or set config.json codex to its executable path.');
-  console.log(result.stdout.trim(), '\nRun codex login on this host before starting.');
+  const launch = resolveLaunch(c.codex || 'codex');
+  const result = spawnSync(launch.command, [...launch.prefix, '--version'], { encoding: 'utf8', timeout: 10000, maxBuffer: 65536, windowsHide: true });
+  if (result.error || result.status !== 0 || !/^codex-cli\s+\S+/.test(result.stdout.trim()) || result.stdout.trim().length > 512) throw new Error('Cannot run Codex executable; install Codex CLI or set config.json codex to its executable path.');
+  const verified = {executablePath: launch.prefix[0] || launch.command, version: result.stdout.trim()};
+  if (json) console.log(JSON.stringify(verified));
+  else console.log(verified.version, '\nRun codex login on this host before starting.');
+  return verified;
 }
 if (require.main === module) {
   try {
     switch (process.argv[2]) {
       case 'install': install(process.argv[3] || defaultTarget()); break;
       case 'start': start(); break;
-      case 'doctor': doctor(); break;
+      case 'doctor': doctor(process.argv[3] === '--json'); break;
       case 'repair-permissions': repairPermissions(process.argv[3]); break;
       case 'uninstall': uninstall(process.argv[3]?.startsWith('--') ? undefined : process.argv[3], {keepLauncher:process.argv.includes('--keep-launcher')}); break;
       case 'key': console.log(readInstalledKey(process.argv[3])); break;
@@ -144,4 +147,4 @@ if (require.main === module) {
     }
   } catch (error) { console.error(error.message); process.exitCode = 1; }
 }
-module.exports = { install, defaultTarget, payload, readInstalledKey, keyHelp, uninstall, assertStopped, repairPermissions };
+module.exports = { install, defaultTarget, payload, readInstalledKey, keyHelp, uninstall, assertStopped, repairPermissions, doctor };
