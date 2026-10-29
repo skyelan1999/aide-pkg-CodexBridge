@@ -1,0 +1,88 @@
+{
+  "version": "0.3.2",
+  "issues": [
+    "https://github.com/skyelan1999/aide/issues/610",
+    "https://github.com/skyelan1999/aide/issues/602"
+  ],
+  "status": "Combined pre-publication acceptance; GitHub CI and delivery are recorded separately in PR/Release",
+  "pluginArchive": {
+    "file": "codex-bridge-0.3.2.zip",
+    "bytes": 34027,
+    "sha256": "048a6978cc22751e79cd99a824e94a862043fc9e238986e128ea661881d07098"
+  },
+  "nativeArchives": [
+    {
+      "file": "codex-bridge-manager-0.3.2-darwin-amd64.zip",
+      "bytes": 3005850,
+      "sha256": "20e955aa9fdd1e346503aa743762012828389e340d9d3b390b16ab85beaa1642"
+    },
+    {
+      "file": "codex-bridge-manager-0.3.2-darwin-arm64.zip",
+      "bytes": 2768034,
+      "sha256": "8707c5ee71c113f2280bc99d0e6c698ed58858a86e43b5f0fdb0aa6659f28606"
+    },
+    {
+      "file": "codex-bridge-manager-0.3.2-linux-amd64.tar.gz",
+      "bytes": 2961982,
+      "sha256": "06d100b3f726811f959984e04c40b0dd37c49f98ee899c3d4795a2fe9afe8829"
+    },
+    {
+      "file": "codex-bridge-manager-0.3.2-linux-arm64.tar.gz",
+      "bytes": 2676199,
+      "sha256": "6eae8d73864bfeadcad16aefb1b64a42926565a9c853bdae9d7c77d817261257"
+    },
+    {
+      "file": "codex-bridge-manager-0.3.2-windows-amd64.zip",
+      "bytes": 3034504,
+      "sha256": "2f5b91e276a0d4e6e6e9a480474babdfb718a300e9aca702ace7c09fbd28a480"
+    },
+    {
+      "file": "codex-bridge-manager-0.3.2-windows-arm64.zip",
+      "bytes": 2712229,
+      "sha256": "e1ca14e5ce50b739026de7b2dc211739afebc20b7ac4efdc41444aa6e7edc8f2"
+    }
+  ],
+  "checks": [
+    {
+      "name": "All 48 Node synthetic tests including actual native-page JS in DOM fixture",
+      "status": "PASS"
+    },
+    {
+      "name": "Linux ARM64 native Go race and vet, lifecycle, key authority and CLI discovery",
+      "status": "PASS"
+    },
+    {
+      "name": "macOS ARM64 native Go tests and executable version 0.3.2",
+      "status": "PASS"
+    },
+    {
+      "name": "Six OS/architecture distributions: first-open guide, matching plugin ZIP and byte-identical embedded payload",
+      "status": "PASS"
+    },
+    {
+      "name": "Actual macOS isolated native manager: install/start/key/stop, before confirmation replacement",
+      "status": "PASS"
+    },
+    {
+      "name": "Final native page rendered at desktop width",
+      "status": "PASS",
+      "evidence": "evidence/five-actions-0.3.1.png",
+      "note": "Screenshot shows the five-action UI in the 0.3.1 pre-publication candidate before the release-number conflict was resolved as 0.3.2; no screen text was altered."
+    },
+    {
+      "name": "Final inline confirmation in real browser",
+      "status": "NOT_RUN",
+      "reason": "Prior test native confirmation left browser automation input blocked. Replaced native confirm with inline controls; source JS fixture verifies cancel, Escape, confirm, no unintended request and retained error."
+    },
+    {
+      "name": "Real Windows 10/11/Server 2016 desktop/account operation",
+      "status": "NOT_RUN"
+    },
+    {
+      "name": "Real account quota/model inference",
+      "status": "NOT_RUN"
+    }
+  ],
+  "privacy": "Synthetic fixtures only. No real auth files, account keys, prompts, histories or provider settings read/copied. No Aide core or 9999 changes.",
+  "fixedDuringCI": "Windows packaging verifier now reads UTF-8 explicitly; prior cp1252 UnicodeDecodeError was not a native manager test failure. Latest PR checks establish the fix on Windows."
+}

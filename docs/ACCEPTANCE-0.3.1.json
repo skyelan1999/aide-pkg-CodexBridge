@@ -1,86 +1,95 @@
 {
+  "issue": "https://github.com/skyelan1999/aide/issues/602",
+  "repository": "skyelan1999/aide-pkg-CodexBridge",
   "version": "0.3.1",
-  "issues": [
-    "https://github.com/skyelan1999/aide/issues/610",
-    "https://github.com/skyelan1999/aide/issues/602"
+  "base": "77efaab",
+  "branch": "codex/issue-602-gui-cli-discovery",
+  "status": "verified source/build candidate; not merged/released/market updated",
+  "implementation": [
+    "Known CLI fallback paths for GUI PATH; explicit path and PATH priority retained",
+    "Bounded numeric NVM version order and Node NVM/Volta discovery",
+    "Node doctor verifies codex-cli version with timeout/output limits and returns resolved launch path",
+    "Go native manager persists verified path only; preserve RawMessage fields/numeric values and concurrent edits",
+    "Windows official npm JS entry through Node; no shell execution"
   ],
-  "status": "Combined pre-publication acceptance; GitHub CI and delivery are recorded separately in PR/Release",
+  "red": [
+    {
+      "scope": "original resolver with new tests",
+      "result": "GUI NVM and Windows npm fallback fail",
+      "evidence": "/workspace/scratch/issue-review-20261026/cycle118-node-red.log"
+    },
+    {
+      "scope": "original native manager compiled with isolated tests",
+      "result": "unverified diagnostic not rejected and configured path not found after PATH changes",
+      "evidence": "/workspace/scratch/issue-review-20261026/cycle118-go-red.log"
+    }
+  ],
+  "green": [
+    {
+      "scope": "all44 Node synthetic tests",
+      "status": "PASS",
+      "evidence": "/workspace/scratch/issue-review-20261026/cycle118-node-full-final.log"
+    },
+    {
+      "scope": "native Go package race including settings/numeric/concurrent-edit tests",
+      "status": "PASS",
+      "evidence": "/workspace/scratch/issue-review-20261026/cycle118-go-final.log"
+    },
+    {
+      "scope": "Go vet",
+      "status": "PASS"
+    },
+    {
+      "scope": "actual isolated Linux native manager HTTP/UI,1280 and390width,install/diagnose/persist and invalidCLI409 unchanged config",
+      "status": "PASS",
+      "evidence": "/workspace/scratch/issue-review-20261026/cycle118-native-browser-final/result.json"
+    },
+    {
+      "scope": "six CGO-disabled native build candidates plus Linuxamd64 --version",
+      "status": "PASS"
+    }
+  ],
   "pluginArchive": {
     "file": "codex-bridge-0.3.1.zip",
-    "bytes": 34027,
-    "sha256": "f26837696d6579547f8bbea3e6d8a0384d52d56d40faab6a449736393eba6dde"
+    "bytes": 40450,
+    "sha256": "bbc26f55e6f49f1f8b8b770203c1d050d4ff4ed3bc53e331c176bce8b716bd69"
   },
   "nativeArchives": [
     {
       "file": "codex-bridge-manager-0.3.1-darwin-amd64.zip",
-      "bytes": 3005835,
-      "sha256": "da0e115e2d42e9114c049193b6cc4f7b408e69ee2ffec76c51c5333b6873a6b8"
+      "bytes": 2965044,
+      "sha256": "4c739449c72f7477a5fbe02e7aca381506d7a788e89f0f1e5c08d71617a90484"
     },
     {
       "file": "codex-bridge-manager-0.3.1-darwin-arm64.zip",
-      "bytes": 2768034,
-      "sha256": "74c998dec56b0605326b53b9ee4226b4a3778761e4881d9550a339e791949209"
-    },
-    {
-      "file": "codex-bridge-manager-0.3.1-windows-amd64.zip",
-      "bytes": 3034494,
-      "sha256": "65cfe1b21bfb6b3c1e2ffdab2ea042a01662c7436ad27cb796a6d72003773475"
-    },
-    {
-      "file": "codex-bridge-manager-0.3.1-windows-arm64.zip",
-      "bytes": 2712219,
-      "sha256": "eb59aff9b9a3a10abdd1773181da2e1c7d0b3456f0d3db98239d8105cb7d3b6e"
+      "bytes": 2728937,
+      "sha256": "20be68721652c27a515f7ddde60b8efe33a5dc206b70aa76173d6b0bc1002531"
     },
     {
       "file": "codex-bridge-manager-0.3.1-linux-amd64.tar.gz",
-      "bytes": 2961976,
-      "sha256": "4525f028372cb352595a203e9b0bf9953f9b025d050762939d4eaeac662002ff"
+      "bytes": 2921399,
+      "sha256": "f8e18def892f65177a7918842098b63ce35aa7e3a0b7a8196573782500c87c49"
     },
     {
       "file": "codex-bridge-manager-0.3.1-linux-arm64.tar.gz",
-      "bytes": 2676191,
-      "sha256": "0ad738849f4acf21286903e5f9969f31c62cb8c5ff483d14d8849ab30b5f28ab"
+      "bytes": 2636718,
+      "sha256": "111ad7c0d899d8a2ef0ebd908d3154ef0a0ea04069b2facd7f4fe81bd5efa4ef"
+    },
+    {
+      "file": "codex-bridge-manager-0.3.1-windows-amd64.zip",
+      "bytes": 2996093,
+      "sha256": "5d2fd6dac4e11cf141b78197672a7fc8b7257e130cc4590df3711c0f441b3550"
+    },
+    {
+      "file": "codex-bridge-manager-0.3.1-windows-arm64.zip",
+      "bytes": 2670914,
+      "sha256": "3b715dc751b5b2e287e308eea3622e285c3dee37bb9274b99f003782b0be3700"
     }
   ],
-  "checks": [
-    {
-      "name": "All 48 Node synthetic tests including actual native-page JS in DOM fixture",
-      "status": "PASS"
-    },
-    {
-      "name": "Linux ARM64 native Go race and vet, lifecycle, key authority and CLI discovery",
-      "status": "PASS"
-    },
-    {
-      "name": "macOS ARM64 native Go tests and executable version 0.3.1",
-      "status": "PASS"
-    },
-    {
-      "name": "Six OS/architecture distributions: first-open guide, matching plugin ZIP and byte-identical embedded payload",
-      "status": "PASS"
-    },
-    {
-      "name": "Actual macOS isolated native manager: install/start/key/stop, before confirmation replacement",
-      "status": "PASS"
-    },
-    {
-      "name": "Final native page rendered at desktop width",
-      "status": "PASS",
-      "evidence": "evidence/five-actions-0.3.1.png"
-    },
-    {
-      "name": "Final inline confirmation in real browser",
-      "status": "NOT_RUN",
-      "reason": "Prior test native confirmation left browser automation input blocked. Replaced native confirm with inline controls; source JS fixture verifies cancel, Escape, confirm, no unintended request and retained error."
-    },
-    {
-      "name": "Real Windows 10/11/Server 2016 desktop/account operation",
-      "status": "NOT_RUN"
-    },
-    {
-      "name": "Real account quota/model inference",
-      "status": "NOT_RUN"
-    }
+  "notRun": [
+    "real macOS/Windows GUI session and user-installed CLI",
+    "real account authenticated model catalog or inference",
+    "main integration, Release publication, marketplace update"
   ],
-  "privacy": "Synthetic fixtures only. No real auth files, account keys, prompts, histories or provider settings read/copied. No Aide core or 9999 changes."
+  "privacy": "Only synthetic CLI/config/settings used; no auth files, login tokens, provider credentials, real prompts or user histories read/copied. Temporary Linux fixture and owned server/browser removed."
 }

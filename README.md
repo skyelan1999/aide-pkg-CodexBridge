@@ -1,12 +1,12 @@
 # Codex Bridge · Codex 模型桥接
 
-独立 Aide 插件与本机桥接程序，支持 Windows、macOS、Linux。当前补丁候选 **0.3.1**；实际发布状态以[Release](https://github.com/skyelan1999/aide-pkg-CodexBridge/releases)为准。
+独立 Aide 插件与本机桥接程序，支持 Windows、macOS、Linux。当前补丁候选 **0.3.2**；实际发布状态以[Release](https://github.com/skyelan1999/aide-pkg-CodexBridge/releases)为准。
 
 ## Windows：解压后直接打开
 
 下载对应系统/架构的宿主安装包，**完整解压**，双击 **CodexBridgeManager.exe**。不要在 ZIP 内直接运行。
 
-安装包已包含宿主管理器、内嵌桥接程序，以及同版 `codex-bridge-0.3.1.zip` 插件包；无需克隆仓库或另找源码。需要插件工作台时，将这个插件 ZIP 导入 Aide 即可。宿主安装不下载仓库、不使用 PowerShell。
+安装包已包含宿主管理器、内嵌桥接程序，以及同版 `codex-bridge-0.3.2.zip` 插件包；无需克隆仓库或另找源码。需要插件工作台时，将这个插件 ZIP 导入 Aide 即可。宿主安装不下载仓库、不使用 PowerShell。
 
 macOS 打开包内的 **Codex Bridge Manager.app**；Linux 打开 **CodexBridgeManager**。运行桥接需要本机已有 **Node.js 18+** 和已登录的 **Codex CLI**；这两个第三方依赖及账号凭据不包含在发行包中，也不会被静默安装或修改。
 

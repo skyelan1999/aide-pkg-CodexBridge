@@ -43,7 +43,7 @@ The manager's `/api/models` reads the owned installation's model key and configu
 
 `marked()` recognizes directories whose settings were retained after uninstall; `installed()` additionally requires actual program files. Safe reinstall can use the marker without falsely enabling Start. Version identities, payload and download names derive from the manifest; see [version policy](VERSIONING.md).
 
-## 0.3.1 five-action manager
+## 0.3.2 five-action manager
 
 The native owner page exposes five primary operations: install, start, stop, uninstall and generate/copy key. Local operations no longer require plugin pairing. Pairing/client revocation, diagnostics and repair remain under More settings and preserve the existing scoped-client contract. The owner-only POST `/api/key` accepts an empty object, reuses existing keys, and generates a missing key only while the host is stopped. Client grants cannot call it. No secret is exposed as a model-tool result. Status refresh is separate from action feedback, so errors remain visible.
 

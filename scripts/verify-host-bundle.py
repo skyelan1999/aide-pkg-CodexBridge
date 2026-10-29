@@ -3,7 +3,7 @@
 import argparse,io,json,pathlib,tarfile,zipfile
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 def verify(platform,arch):
- version=json.loads((ROOT/'manifest.json').read_text())['version']
+ version=json.loads((ROOT/'manifest.json').read_text(encoding='utf-8'))['version']
  base=ROOT/'dist/managers';name=f'codex-bridge-manager-{version}-{platform}-{arch}'
  if platform=='linux':
   with tarfile.open(base/(name+'.tar.gz')) as archive:files={m.name:archive.extractfile(m).read() for m in archive.getmembers() if m.isfile()}

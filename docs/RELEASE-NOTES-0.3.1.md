@@ -1,9 +1,7 @@
-# Codex Bridge 0.3.1 · Five actions
+# Codex Bridge 0.3.1 candidate
 
-The native manager's main window contains only Install, Start, Stop, Uninstall and Generate key. Local operation does not require plugin pairing. More settings holds optional pairing, diagnostics, repair and client administration. Confirmations happen inside the page; background status refresh no longer erases action errors. Generate key reuses an existing model key and never rotates a running service's credentials. New key creation remains restricted to the owner window; paired model tools cannot retrieve credentials.
+Fixes the implementation of [Aide #602](https://github.com/skyelan1999/aide/issues/602): a GUI-launched host manager can locate Codex installed outside its minimal PATH, validate the actual CLI, and persist that exact launch path. Known Homebrew, user-bin, npm, Volta, NVM and macOS app locations are supported; custom absolute paths retain priority. Windows npm launches the official JS entry through Node without a shell.
 
-Every platform/architecture host archive now includes its matching plugin ZIP and a bilingual first-open guide. On Windows, extract the entire archive and open CodexBridgeManager.exe. The manager installs its embedded bridge payload without fetching repository source. Node.js 18+ and an already signed-in Codex CLI remain external prerequisites, not silently installed dependencies.
+The manager saves the path only after a bounded successful `codex-cli --version` probe. Failures preserve configuration, unknown numeric values remain intact, and an external edit during diagnosis is retained and requires retry. Node discovery also covers NVM/Volta. Other provider settings, bridge/login keys and networking retain their existing contracts.
 
-Update plugin and manager together to 0.3.1. Existing configuration and model keys are retained; no Aide core, real account/provider or 9999 changes. Real account-quota availability and actual Windows 10/11/Server 2016 desktop use remain separate from hosted CI and synthetic acceptance.
-
-Also includes Aide #602: GUI-safe Node/Codex discovery, a bounded CLI version probe and persistence of the verified path only. Failed probes or concurrent edits retain settings. Windows npm shims resolve to the official JS entry without a shell.
+Install/update both the plugin and the matching host manager, then Diagnose and Start. No login or account migration is required. This is a source/build candidate until normal main review and Release publication complete. See [acceptance](ACCEPTANCE-0.3.1.md) for actual evidence and remaining platform/device limits.
