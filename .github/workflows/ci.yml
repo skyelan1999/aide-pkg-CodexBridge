@@ -27,7 +27,7 @@ jobs:
           python-version: '3.12'
       - run: node scripts/build.cjs
       - run: python scripts/package-codex-bridge.py --out dist
-      - run: node --test scripts/codex-openai-bridge.test.cjs scripts/codex-bridge-package.test.cjs scripts/platform.test.cjs scripts/plugin.test.cjs scripts/quota.test.cjs
+      - run: node --test scripts/codex-openai-bridge.test.cjs scripts/codex-bridge-package.test.cjs scripts/platform.test.cjs scripts/plugin.test.cjs scripts/quota.test.cjs scripts/manager-ui.test.cjs
       - run: git diff --exit-code
 
   manager:
@@ -70,6 +70,8 @@ jobs:
           esac
           python scripts/build-host-manager.py --os "$target" --arch amd64
           python scripts/build-host-manager.py --os "$target" --arch arm64
+          python scripts/verify-host-bundle.py --os "$target" --arch amd64
+          python scripts/verify-host-bundle.py --os "$target" --arch arm64
           arch=$(go env GOARCH)
           if [ "$target" = windows ]; then
             ./dist/managers/$target-$arch-CodexBridgeManager.exe --version

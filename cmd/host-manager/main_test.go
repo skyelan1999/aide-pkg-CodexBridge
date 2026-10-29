@@ -293,7 +293,13 @@ func TestBrowserFixture(t *testing.T) {
 		t.Fatal(e)
 	}
 	defer os.Remove(where)
-	time.Sleep(600 * time.Second)
+	deadline := time.Now().Add(600 * time.Second)
+	for time.Now().Before(deadline) {
+		if _, e := os.Stat(where + ".done"); e == nil {
+			return
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
 }
 func TestQuitRequiresOwnerUIAndRejectsFurtherActions(t *testing.T) {
 	m := fixture(t)

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -121,5 +122,102 @@ func TestQuotaRequiresAuthentication(t *testing.T) {
 	}
 	if w := call(m, "GET", "/api/usage", "", m.control, ""); w.Code != 409 {
 		t.Fatal("uninstalled host must stay unavailable", w.Code)
+	}
+}
+
+func keyCall(m *manager) *httptest.ResponseRecorder {
+	r := httptest.NewRequest("POST", "http://127.0.0.1:8788/api/key", strings.NewReader(`{}`))
+	r.Header.Set("Authorization", "Bearer "+m.control)
+	r.Header.Set("X-Manager-Owner-UI", "1")
+	w := httptest.NewRecorder()
+	m.handler().ServeHTTP(w, r)
+	return w
+}
+func TestOwnerKeyGenerationReuseAndUninstall(t *testing.T) {
+	m := fixture(t)
+	if w := keyCall(m); w.Code != 409 {
+		t.Fatal("key before installation", w.Code)
+	}
+	if e := m.install(); e != nil {
+		t.Fatal(e)
+	}
+	file := filepath.Join(m.root, "data", "bridge.key")
+	original, _ := os.ReadFile(file)
+	for i := 0; i < 2; i++ {
+		w := keyCall(m)
+		var d struct {
+			BridgeKey string `json:"bridgeKey"`
+			Created   bool   `json:"created"`
+		}
+		if w.Code != 200 || json.Unmarshal(w.Body.Bytes(), &d) != nil || d.Created || d.BridgeKey != string(original) {
+			t.Fatal("existing key must be reused")
+		}
+	}
+	if w := call(m, "POST", "/api/key", "{}", m.control, ""); w.Code != 403 {
+		t.Fatal("key exposed outside owner UI", w.Code)
+	}
+	grant := strings.Repeat("c", 64)
+	m.clients = map[string]bool{keyHash(grant): true}
+	if w := call(m, "POST", "/api/key", "{}", grant, ""); w.Code != 403 {
+		t.Fatal("paired client gained model key", w.Code)
+	}
+	if e := m.uninstall(); e != nil {
+		t.Fatal(e)
+	}
+	retained, _ := os.ReadFile(file)
+	if string(retained) != string(original) {
+		t.Fatal("uninstall deleted key")
+	}
+	if w := keyCall(m); w.Code != 409 {
+		t.Fatal("uninstalled program returned key")
+	}
+	if e := m.install(); e != nil {
+		t.Fatal(e)
+	}
+	if e := os.Remove(file); e != nil {
+		t.Fatal(e)
+	}
+	w := keyCall(m)
+	var d struct {
+		BridgeKey string `json:"bridgeKey"`
+		Created   bool   `json:"created"`
+	}
+	if w.Code != 200 || json.Unmarshal(w.Body.Bytes(), &d) != nil || !d.Created || len(d.BridgeKey) != 64 {
+		t.Fatal("missing key was not generated")
+	}
+	saved, _ := os.ReadFile(file)
+	if string(saved) != d.BridgeKey {
+		t.Fatal("generated key not persisted")
+	}
+}
+
+func TestMissingKeyWhileRunningAndCustomStatus(t *testing.T) {
+	m := fixture(t)
+	if e := m.install(); e != nil {
+		t.Fatal(e)
+	}
+	p := filepath.Join(m.root, "data", "bridge.key")
+	os.Remove(p)
+	m.child = &exec.Cmd{}
+	if w := keyCall(m); w.Code != 409 {
+		t.Fatal("running missing key must not change auth", w.Code)
+	}
+	if _, e := os.Stat(p); !os.IsNotExist(e) {
+		t.Fatal("unexpected key write")
+	}
+	m.child = nil
+	cfg, e := m.config()
+	if e != nil {
+		t.Fatal(e)
+	}
+	fake := filepath.Join(m.root, "configured-codex.cjs")
+	os.WriteFile(fake, []byte("// fixture"), 0600)
+	cfg["codex"] = fake
+	cfg["port"] = 18787
+	b, _ := json.Marshal(cfg)
+	atomic(filepath.Join(m.root, "config.json"), b, 0600)
+	d := m.status()
+	if d["port"] != 18787 || d["codexFound"] != true {
+		t.Fatal("configured host status wrong", d)
 	}
 }
