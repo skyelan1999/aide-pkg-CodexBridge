@@ -8,6 +8,6 @@ Use this workflow when client-side attachment uploads are unavailable; GitHub's 
 
 For 0.3.1, draft427514038 targets948b345d32e4a833f8248641eeb1fc2f6e6cc0ca; CI40824171637 tested07c3f09119c483cd51061e81b95ba3618641e2bb with an identical source tree. All nine CI jobs passed. Client upload returned401 while ordinary API reads/writes worked; the draft remains unpublished until this workflow verifies complete assets.
 
-Checkpoint: publisher unit tests pass4. Draft lookup must use the explicit release ID (the unpublished tag REST endpoint returns404); direct ID427514038 was verified draft with zero assets. This branch is not yet pushed, merged or dispatched. User explicitly clarified599 and that rendering bug is now the active priority; leave the draft unpublished and resume this checked workflow later.
+Verification: four local publisher unit tests pass. GitHub Actions publication remains pending normal main integration and explicit dispatch. Draft lookup uses the release ID because the unpublished tag REST endpoint returns404; direct ID427514038 was verified as an unpublished0.3.1 draft with zero assets.
 
 The publisher checks builder sidecars before normalizing Linux gzip headers (mtime0, empty gzip filename), then regenerates their sidecars. Tar payload bytes remain unchanged; retries of the same source do not differ only because of gzip timestamps. It rejects unexpected draft asset names before downloading them.
