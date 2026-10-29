@@ -1,0 +1,81 @@
+{
+  "issue": "https://github.com/skyelan1999/aide/issues/604",
+  "version": "0.3.0",
+  "status": "local synthetic acceptance passed; real-account read unavailable; not published",
+  "sourceSHA256": {
+    "manifest.json": "4d55e93d21d808a03eccc639a9c499b498f3bcf514dd363f5a99a5c86e56e033",
+    "package.json": "aac07178d9e2ea089cd4176e0f64616b87739e9c3111ab7a8eee96b6c46e46be",
+    "index.js": "b370e62dc35b60018877caa23f829154c58277638e75834622b2c08c84d54d6e",
+    "connection.cjs": "f95afc2526bfcf56362db26b94c9e53a6b5f7da7985e67a84a1074154ac8cca1",
+    "quota.cjs": "0e5a4259339df64b73c5ac89b158287836fdf55d70589f27cb5dd0c79587f153",
+    "runtime/bridge.cjs": "b41272c9a682d7892d4d2faa90d08a52848aa491d563cf7713f6bfba99e5f904",
+    "src/viewer.html": "bec35a5254ffc3645da2cbbe61c63d9fc5bce6ee35c7890f7bac416df2307808",
+    "viewer.html": "e7f3ed3f3ca712d6c5296e3d50243083fb283467dc3e6fec718b325f1e0c9cf5",
+    "manage.cjs": "7e73143f78dd3988162ec218bced25a00aeaca9e7c26f218eb589b35aa66de0b",
+    "cmd/host-manager/main.go": "57bf08ceb504e15ce2fa3d2d2539440333d59cf98893afd81be5519635a89ee2",
+    "cmd/host-manager/pairing.go": "baeb0d57a614ae3e8547f7bf0a99d8ddfa14453320f4e5a1a5e7e73fa4962488",
+    "cmd/host-manager/main_test.go": "921083df04028148d67f881a2ab218171cbf2eb0ed219eb7992910467210e529",
+    "cmd/host-manager/pairing_test.go": "eb8d3b5e5d453778e65dd4a91829d88653b74de17cd90995bf13d81fde10dc37",
+    "scripts/quota.test.cjs": "85222410a80fb8e4376499bbe922100d2dc79a9e16670e3519e7db4e0bb78f3e",
+    "scripts/plugin.test.cjs": "69157399989b800b040fa6d5bb0f3d77ebb62b7a72a14ee627083ef99adf5666",
+    "scripts/package-codex-bridge.py": "1b64410bc688d0631eb6c89177e8b4c8a36a17af7fae94d673f8deb729923a1d",
+    ".github/workflows/ci.yml": "ea92b7c9baf6dd805bd0a1ce94844cf62ce67c0c6d211a605e67ef535d29c935"
+  },
+  "pluginSHA256": "e9a3109bf10b03dc6690b754d776a39ad079083757a5e8b28cc9c50d0459bd76",
+  "nativeAssets": [
+    {
+      "target": "windows",
+      "arch": "amd64",
+      "archive": "codex-bridge-manager-0.3.0-windows-amd64.zip",
+      "sha256": "5d7772f48aab90bf48b7c44cecffc7864db709cc50be8d529feadb58ced0ddbc",
+      "embeddedPayloadMatches": true
+    },
+    {
+      "target": "windows",
+      "arch": "arm64",
+      "archive": "codex-bridge-manager-0.3.0-windows-arm64.zip",
+      "sha256": "d025de48353fdd4528731fbf1d228de3d441718dc31c6f0528e18c740b9fa490",
+      "embeddedPayloadMatches": true
+    },
+    {
+      "target": "darwin",
+      "arch": "amd64",
+      "archive": "codex-bridge-manager-0.3.0-darwin-amd64.zip",
+      "sha256": "4be0c4fe1e074c3381d30de189c616b10360e97974a5ad4f1ca3b5fdf79eb932",
+      "embeddedPayloadMatches": true
+    },
+    {
+      "target": "darwin",
+      "arch": "arm64",
+      "archive": "codex-bridge-manager-0.3.0-darwin-arm64.zip",
+      "sha256": "6e9d9abc903b349286dc43a0acfc9656d7a8a8fa20e204aa0d7074dd808571ba",
+      "embeddedPayloadMatches": true
+    },
+    {
+      "target": "linux",
+      "arch": "amd64",
+      "archive": "codex-bridge-manager-0.3.0-linux-amd64.tar.gz",
+      "sha256": "c839c663991dce392f0917c0114d7f33e68c0a20ca785309ab2004ee580a27f3",
+      "embeddedPayloadMatches": true
+    },
+    {
+      "target": "linux",
+      "arch": "arm64",
+      "archive": "codex-bridge-manager-0.3.0-linux-arm64.tar.gz",
+      "sha256": "32ab57e02787110b816b868303eb868d87bc63ae29436926a59181665308d271",
+      "embeddedPayloadMatches": true
+    }
+  ],
+  "checks": {
+    "nodeTests": "40 PASS",
+    "linuxGoRaceVet": "PASS",
+    "macosNativeTests": "PASS",
+    "macosLinuxVersionSmoke": "0.3.0 PASS",
+    "browser": "Synthetic paired manager to real Node bridge to fake Codex quota PASS; zh/en/multi-bucket/null clears stale display",
+    "liveCodexQuota": "UNAVAILABLE; no percentages accepted",
+    "windowsLinuxRealDesktopAccount": "NOT_RUN",
+    "release": "NOT_RUN",
+    "market": "NOT_RUN",
+    "9999": "UNCHANGED"
+  }
+}

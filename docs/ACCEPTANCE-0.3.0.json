@@ -1,0 +1,115 @@
+{
+  "issue": "https://github.com/skyelan1999/aide/issues/600",
+  "version": "0.3.0",
+  "status": "local acceptance passed; not published",
+  "sourceSHA256": {
+    "manifest.json": "a00da8f89a074533cd61ca0270d5d11239553045bf57cb097789db0ded2c6732",
+    "package.json": "aac07178d9e2ea089cd4176e0f64616b87739e9c3111ab7a8eee96b6c46e46be",
+    "index.js": "6b18a6cbd2fe8f06921eda65df67a0004c7584023ade1b4959c7bea90c7e34cd",
+    "connection.cjs": "f95afc2526bfcf56362db26b94c9e53a6b5f7da7985e67a84a1074154ac8cca1",
+    "src/viewer.html": "09c348f0e586099276d25a9e9b4a4b9078465dd60ecff40e132427e664425fc5",
+    "viewer.html": "d858ec0d6ac6d35c435918e72565655b5d04db197cfc2cfa9dba8a2f5ad368f0",
+    "runtime/bridge.cjs": "4a22e210d3aadfd49b44326e8f52ca207f41de6b0b8ca4ecefabd46fcf0f2e32",
+    "cmd/host-manager/main.go": "11f6753b9926517632626c0d7e583f9830758672be82d79116339ce2481403a0",
+    "cmd/host-manager/pairing.go": "abc011a58a711ed5c2cd5f4ce9cc2106877e514fe61e9bbd8f99b483218fb7f0",
+    "cmd/host-manager/ui.html": "ef391c22416d2b650266aea14098e2a88c776665e2ce7378c2f4435e464f84bd",
+    "cmd/host-manager/version_gen.go": "e3324d4e8aa60b2840e37831665b4c542a52dfb77d267a9fb0e233ff1624158f",
+    "scripts/build.cjs": "dd9f91b4c59479006cb90a0034e326c1407c41aa844ee2b17e4784ed7aae5acb",
+    "scripts/build-host-manager.py": "46e392601b05ffa62d009726fe60a1a828180d962ddff8887abc90e633b98772"
+  },
+  "pluginSHA256": "01a86e752531e0f77c4601d1c9ae8b845a7d1e7b0aec4f8673c68ba27df63930",
+  "nativeAssets": [
+    {
+      "platform": "windows",
+      "arch": "amd64",
+      "file": "codex-bridge-manager-0.3.0-windows-amd64.zip",
+      "sha256": "80f602c93fb8d7d691f82e0637eff33505065494a6db4f806d46f068a49eee22",
+      "embeddedPayloadMatches": true
+    },
+    {
+      "platform": "windows",
+      "arch": "arm64",
+      "file": "codex-bridge-manager-0.3.0-windows-arm64.zip",
+      "sha256": "56bbd4c28681d7b0edcd0bfb688a382837d184eb4d1235c2a8cca355d8b129b2",
+      "embeddedPayloadMatches": true
+    },
+    {
+      "platform": "darwin",
+      "arch": "amd64",
+      "file": "codex-bridge-manager-0.3.0-darwin-amd64.zip",
+      "sha256": "f1ee478f26064a0679b25b6ff24d5eaf003d5e4996072dba2c61853ef6d9cf9b",
+      "embeddedPayloadMatches": true
+    },
+    {
+      "platform": "darwin",
+      "arch": "arm64",
+      "file": "codex-bridge-manager-0.3.0-darwin-arm64.zip",
+      "sha256": "48e19ef56d20a83824fcd5523ba45d100bac67c5f418e027f2c77fdc075fe87e",
+      "embeddedPayloadMatches": true
+    },
+    {
+      "platform": "linux",
+      "arch": "amd64",
+      "file": "codex-bridge-manager-0.3.0-linux-amd64.tar.gz",
+      "sha256": "488a09408cd285e13e0577324bdd8cb02144c85d72d2796a7679635470396362",
+      "embeddedPayloadMatches": true
+    },
+    {
+      "platform": "linux",
+      "arch": "arm64",
+      "file": "codex-bridge-manager-0.3.0-linux-arm64.tar.gz",
+      "sha256": "89738b4589d17ec006a7959df725a62d08065810688fb89c8602de1475483ae8",
+      "embeddedPayloadMatches": true
+    }
+  ],
+  "tests": {
+    "node": "35 tests passed",
+    "go": "Linux arm64 race and vet passed; native macOS arm64 tests passed",
+    "nativeVersionSmoke": [
+      "macOS arm64: Codex Bridge Manager 0.3.0",
+      "Linux arm64: Codex Bridge Manager 0.3.0"
+    ],
+    "browser": "IAB rendered synthetic Node plugin + real Go manager fixture: unpaired buttons disabled; one-use code connects; install, repair, start, catalog, stop and disconnect; stop immediately reports not running; catalog clears and disables on stop; Chinese/English labels and dynamic results checked"
+  },
+  "limits": [
+    "Not a full Aide browser/provider acceptance; no live account inference in this task.",
+    "Windows and Linux non-native architectures cross-built only; hosted OS CI and real-device acceptance remain separate.",
+    "Private plugin grant file uses local permissions, not encryption. Legacy secret settings are not silently erased.",
+    "No Aide core, 9999, MIXSoul, user provider settings, account or production host-service modifications.",
+    "No merge, tag, Release or marketplace update in this candidate task."
+  ],
+  "packageSourceSHA256": {
+    "LICENSE": "b868596f9807363374cfdcd4995f63bddbf25cfdf1f9ee5959b64f79c663fc7e",
+    "README.md": "1987f39d3b47808c2fbd484ac43ab7bb2411b60cf3086f6d88e97bdf6c9f2832",
+    "config.example.json": "4681e8a03db0a46534557e73209cc19fb3d4895699b0c4a9cbcebfa4c7b9dd9d",
+    "connection.cjs": "f95afc2526bfcf56362db26b94c9e53a6b5f7da7985e67a84a1074154ac8cca1",
+    "get-key.cmd": "6ed4843248564464db24445758c4ba81efe06d5af3cd83d66a6703d97bf9879c",
+    "get-key.command": "e41135c87854b1898835ce13ddd475502ce96577b287a776137f4d1959178e05",
+    "get-key.sh": "843f1d9860eef1cfc23f3df55d6aa93f7dc8cdb19d54389d824d28e76b3b7c93",
+    "index.js": "6b18a6cbd2fe8f06921eda65df67a0004c7584023ade1b4959c7bea90c7e34cd",
+    "install.cmd": "b5bfe1cf25310fb80eaec752f6f6e6341347f3194638ab5419b54958efb272b8",
+    "install.command": "0501fcb131e1a375a3647d00d62bb58bdd53416f9681b304797d29b889dcb32b",
+    "install.sh": "587c238ba525828260268d2f11d73536365f1520c1b2dc4ddd4c97f103e118bc",
+    "manage.cjs": "bd7257285c1594c1c87d774e05301fe752c17cc7895ffdd0ea09a6e3af825d32",
+    "manifest.json": "a00da8f89a074533cd61ca0270d5d11239553045bf57cb097789db0ded2c6732",
+    "runtime/bridge.cjs": "4a22e210d3aadfd49b44326e8f52ca207f41de6b0b8ca4ecefabd46fcf0f2e32",
+    "runtime/launch.cjs": "b3dfde3d7a24182c57923f4d91c958ed44104e85f84b9c1d12ef2ead5a618a82",
+    "start.cmd": "8e186f3d3b84e6159221aacddd1015e948ad523d84b0596d73ef8e89c3dcffa9",
+    "start.command": "9e55c6e46d58e6dae97e7c4f75d3e491a416fbcd661e4aa568488e1a213430d0",
+    "start.sh": "ff731f26d4e45c59b8317571d1a6c895e8e10625c4566ac76ba5e557a725e9c7",
+    "uninstall.cmd": "fd935304ee5f8f81f6be1a10571b6bc5d856089f9aa8f5c1296c0f798470cc89",
+    "uninstall.command": "26a2891f2ef25436f6b1d110a8292e48b40d3bafaa0d69de3249ce22134e3794",
+    "uninstall.sh": "b01e3cc238d7f5e5bde2b8c1cdbc6827ae30090b14e962f050c8c0b9a1d660ab",
+    "viewer.html": "d858ec0d6ac6d35c435918e72565655b5d04db197cfc2cfa9dba8a2f5ad368f0"
+  },
+  "centralIssueAudit": {
+    "publicPluginRepositories": 29,
+    "transferred": [
+      "https://github.com/skyelan1999/aide/issues/600",
+      "https://github.com/skyelan1999/aide/issues/602"
+    ],
+    "remainingOpenPluginIssues": 0,
+    "newAttachmentIssue": "https://github.com/skyelan1999/aide/issues/601"
+  },
+  "supersededBy": "QUOTA-ACCEPTANCE-0.3.0.json (quota feature and final rebuilt assets; historical hashes below retained)"
+}

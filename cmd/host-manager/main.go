@@ -26,8 +26,6 @@ import (
 	"time"
 )
 
-const version = "0.2.0"
-
 //go:embed payload.zip
 var payload []byte
 
@@ -35,7 +33,7 @@ var payload []byte
 var ui string
 
 var launchers = map[string]bool{"install.sh": true, "install.command": true, "start.sh": true, "start.command": true, "get-key.sh": true, "get-key.command": true, "uninstall.sh": true, "uninstall.command": true}
-var owned = []string{"manifest.json", "index.js", "viewer.html", "manage.cjs", "config.example.json", "README.md", "LICENSE", "runtime/bridge.cjs", "runtime/launch.cjs", "install.cmd", "start.cmd", "uninstall.cmd", "get-key.cmd", "install.sh", "start.sh", "uninstall.sh", "get-key.sh", "install.command", "start.command", "uninstall.command", "get-key.command"}
+var owned = []string{"manifest.json", "index.js", "connection.cjs", "quota.cjs", "viewer.html", "manage.cjs", "config.example.json", "README.md", "LICENSE", "runtime/bridge.cjs", "runtime/launch.cjs", "install.cmd", "start.cmd", "uninstall.cmd", "get-key.cmd", "install.sh", "start.sh", "uninstall.sh", "get-key.sh", "install.command", "start.command", "uninstall.command", "get-key.command"}
 
 func token() string {
 	b := make([]byte, 32)
@@ -151,11 +149,18 @@ type manager struct {
 	quitOnce      sync.Once
 	closing       bool
 	stopping      bool
+	pairCode      string
+	pairUntil     time.Time
+	pairAttempts  int
+	clients       map[string]bool
 }
 
-func (m *manager) installed() bool {
+func (m *manager) marked() bool {
 	b, e := os.ReadFile(filepath.Join(m.root, ".aide-codex-bridge"))
 	return e == nil && (strings.HasPrefix(string(b), "aide-codex-bridge") || strings.HasPrefix(string(b), "settings-retained"))
+}
+func (m *manager) installed() bool {
+	return m.marked() && regular(filepath.Join(m.root, "manage.cjs")) == nil && regular(filepath.Join(m.root, "manifest.json")) == nil
 }
 func unpack(raw []byte) (map[string][]byte, error) {
 	z, e := zip.NewReader(bytes.NewReader(raw), int64(len(raw)))
@@ -233,7 +238,7 @@ func (m *manager) install() error {
 	if e = noLinks(m.root); e != nil {
 		return e
 	}
-	if entries, e := os.ReadDir(m.root); e == nil && len(entries) > 0 && !m.installed() {
+	if entries, e := os.ReadDir(m.root); e == nil && len(entries) > 0 && !m.marked() {
 		return errors.New("nonempty unrelated installation directory")
 	}
 	if e = os.MkdirAll(m.root, 0700); e != nil {
@@ -563,16 +568,41 @@ func (m *manager) handler() http.Handler {
 		}
 		if r.URL.Path == "/" && r.Method == "GET" {
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			_, _ = io.WriteString(w, ui)
+			_, _ = io.WriteString(w, strings.ReplaceAll(ui, "__BRIDGE_VERSION__", version))
+			return
+		}
+		if r.URL.Path == "/health" && r.Method == "GET" {
+			reply(w, 200, map[string]any{"service": "aide-codex-bridge-manager", "version": version, "pairingProtocol": 1})
+			return
+		}
+		if r.URL.Path == "/api/pair" && r.Method == "POST" {
+			m.pair(w, r)
 			return
 		}
 		given := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
-		if len(given) != 64 || subtle.ConstantTimeCompare([]byte(given), []byte(m.control)) != 1 {
+		owner := len(given) == 64 && subtle.ConstantTimeCompare([]byte(given), []byte(m.control)) == 1
+		if !owner && !m.clientAllowed(given) {
 			reply(w, 401, map[string]string{"error": "Manager pairing key required"})
 			return
 		}
+		if (r.URL.Path == "/api/pair-code" || r.URL.Path == "/api/revoke-clients") && r.Method == "POST" {
+			if !owner || r.Header.Get("X-Manager-Owner-UI") != "1" {
+				reply(w, 403, map[string]string{"error": "Use the native manager setup window"})
+				return
+			}
+			m.pairingOwner(w, r, r.URL.Path)
+			return
+		}
+		if r.URL.Path == "/api/usage" && r.Method == "GET" {
+			m.usage(w, r)
+			return
+		}
+		if r.URL.Path == "/api/models" && r.Method == "GET" {
+			m.models(w, r)
+			return
+		}
 		if r.URL.Path == "/api/quit" && r.Method == "POST" {
-			if r.Header.Get("X-Manager-Owner-UI") != "1" {
+			if !owner || r.Header.Get("X-Manager-Owner-UI") != "1" {
 				reply(w, 403, map[string]string{"error": "Use the manager setup window"})
 				return
 			}
@@ -605,7 +635,7 @@ func (m *manager) handler() http.Handler {
 			return
 		}
 		if r.URL.Path == "/api/provider" && r.Method == "GET" { // Owner setup UI only; plugin tool never proxies this route.
-			if r.Header.Get("X-Manager-Owner-UI") != "1" {
+			if !owner || r.Header.Get("X-Manager-Owner-UI") != "1" {
 				reply(w, 403, map[string]string{"error": "Use the manager setup window"})
 				return
 			}
@@ -650,7 +680,7 @@ func (m *manager) handler() http.Handler {
 			reply(w, 409, map[string]string{"error": "Manager is shutting down"})
 			return
 		}
-		if in.Action == "restart" {
+		if in.Action == "restart" || in.Action == "stop" {
 			m.mu.Lock()
 			err := m.stop()
 			done := m.wait
@@ -668,7 +698,9 @@ func (m *manager) handler() http.Handler {
 				}
 			}
 			m.mu.Lock()
-			err = m.start()
+			if in.Action == "restart" {
+				err = m.start()
+			}
 			d := m.status()
 			m.mu.Unlock()
 			if err != nil {
@@ -738,6 +770,9 @@ func main() {
 		panic(e)
 	}
 	m := &manager{root: root, control: key, payload: payload, shutdown: make(chan struct{})}
+	if e := m.loadClients(); e != nil {
+		panic(e)
+	}
 	ln, e := net.Listen("tcp", "127.0.0.1:8788")
 	if e != nil {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second)

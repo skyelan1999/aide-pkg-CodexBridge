@@ -2,20 +2,24 @@
 
 An independent Aide plugin and optional local host service. Connect an installed, signed-in Codex CLI to Aide's **OpenAI-compatible Chat Completions** provider. No Aide core changes, Codex binaries, account tokens or user chat histories are bundled.
 
-独立插件 + 宿主机服务，把本机 Codex 接入 Aide 模型提供商。支持 Windows、macOS、Linux 的安装与启动入口；无需 PowerShell。插件自己的版本为 **0.2.0**，不随 Aide RC 号命名。
+独立插件 + 宿主机服务，把本机 Codex 接入 Aide 模型提供商。支持 Windows、macOS、Linux 的安装与启动入口；无需 PowerShell。插件采用独立三段式版本号，当前候选为 **0.3.0**，不复用 Aide RC 号。公开 Release 状态以仓库发行页为准。
 
-## Graphical setup / 无终端安装与日常操作
+## Guided setup / 引导式连接
 
-1. From [Release 0.2.0](https://github.com/skyelan1999/aide-pkg-CodexBridge/releases/tag/v0.2.0), download the native **manager** matching the Codex host OS and CPU. macOS: unzip and copy **Codex Bridge Manager.app** to Applications; Windows: unzip and run **CodexBridgeManager.exe**; Linux: extract the archive and launch the executable from the graphical desktop. Complete any normal OS approval for this unsigned preview; do not disable OS protections.
-2. The manager opens a local setup page. Click **Install/update**, then **Start**. Node.js 18+ and a previously installed/signed-in Codex CLI are prerequisites. The standalone manager binary does not need Node merely to open its setup page. It does not install Node/Codex, log into accounts or add a startup task. An older bridge started outside the manager must be closed once before takeover; it is never killed automatically.
-3. Copy the **manager key** from the native setup page into Aide → Codex Bridge → Settings → **Manager pairing key**. Use `http://host.docker.internal:8788` for Docker Desktop or `http://127.0.0.1:8788` for native Aide. This is a separate administration credential, not the model API key; do not paste it into chat. After pairing, the plugin's buttons actually install/update, start, stop, restart, diagnose, repair permissions and uninstall the owned bridge.
-4. For model-provider setup, copy the separate **model API key** from the native setup page. Configure Aide's model provider and fetch models as before. Provider settings are never overwritten automatically.
+1. Open the Codex Bridge workbench. Download the native manager matching the plugin version, host OS and CPU. Extract and open the application (Windows `.exe`, macOS `.app`, Linux executable). Keep Node.js 18+ and an already signed-in Codex CLI installed on that computer. No PowerShell is used; dependencies, login, firewall and system protections are not changed automatically.
+2. In the native manager choose **Generate connection code**. Enter that one-use code in the plugin workbench within two minutes. The plugin detects native/Docker Desktop local addresses. Do not copy persistent manager keys or fill secret fields in ordinary plugin settings.
+3. Use **Install/update**, **Start**, **Diagnose** and **Repair launchers** in the plugin workbench. Unconnected controls stay disabled. An externally launched bridge must be closed once before takeover; the manager never kills an unrelated process.
+4. Choose **Read model catalog** after startup. The manager performs authenticated catalog access internally; no duplicate diagnostic key is needed. For first model-provider setup, explicitly copy the **model API key** in the native manager into Aide's existing encrypted provider settings. Aide providers and current model selection are never overwritten automatically. Catalog success is not inference acceptance: send a separate small test message.
 
-中文：首次下载原生管理器并双击 → 图形页面点“安装／更新”和“启动” → 将管理密钥在插件设置里配对一次。之后日常维护直接用插件工作台按钮，无需输入 Shell 命令。管理器是独立常驻进程，停止推理桥接后仍可再次启动；点原生页面“退出管理器”会停止它管理的桥接并退出。卸载按钮仅移除桥接程序，保留配置、模型密钥和独立管理器，便于重新安装。
+中文：打开插件工作台 → 安装并双击同版本宿主管理器 → 生成一次性连接码，在工作台连接 → 安装并启动桥接 → 读取模型目录。普通设置只保留连接方式，不填写管理密钥或诊断密钥。模型 API Key 仍单独放在 Aide 的加密模型提供商设置里。卸载宿主保留配置、模型密钥及独立管理器；断开插件连接不停止桥接。管理器“撤销全部管理连接”会让已配对 Aide 后端重新配对，不影响模型 API Key。
 
-管理器仅监听本机回环，不自动改防火墙或提供商。Linux Docker 需使用管理员配置的宿主网络或受控本地转发；`host-gateway` 名称映射本身不会让容器访问宿主回环监听。图形页面与插件按钮不会暴露任意命令执行或自选文件写入接口。Windows 使用参数数组和原生进程树终止，不使用 PowerShell。
+The manager stores SHA-256 hashes of scoped client tokens (at most eight clients). The plugin stores its token outside the package in a sibling `.codex-bridge-private/connection.json`, never in model output or normal plugin settings. POSIX uses 0700/0600 with link checks; Windows inherits the existing user-profile/plugin-storage ACL. This is permission-restricted local storage, **not a claim of encryption** and not isolation from other programs running under the same OS account. The grant permits fixed lifecycle actions and model-ID listing only; owner-only routes for model keys, new connection codes, client revocation and manager shutdown reject it. Disconnect removes the backend copy; revocation in the native manager invalidates it server-side.
 
-The manager holds a separate pairing key in the user's profile; POSIX files use 0600 under a 0700 directory, Windows relies on the user's profile ACL. It controls only a fixed installation directory and fixed operations. It is not an OS sandbox against other programs running as the same account. The manager key grants lifecycle authority; enable the plugin and pair only with a trusted local Aide backend. No arbitrary command/path or remote URL is accepted by the lifecycle tool. Keep the manager open while using plugin controls. Manual shell launchers remain an advanced fallback below.
+### Upgrade from 0.2.x / 旧版迁移
+
+Quit the older native manager before opening the updated application. Update both the plugin and the native manager. Existing `bridgeKey` and `managerKey` settings are neither read/forwarded nor silently erased. If previously filled, remove these legacy fields through the text view of plugin settings, then pair using a new connection code. Existing host `config.json`, inference key and Codex account state are preserved. No Aide core or 9999 change is required. A lost/corrupt private connection state requires re-pairing. Linux Docker still needs explicitly configured, controlled host access; a host-gateway name alone does not expose a loopback service.
+
+See [version policy](docs/VERSIONING.md), [0.3.0 changes](docs/RELEASE-NOTES-0.3.0.md) and the acceptance record for exactly what has been tested. Command-line installation below is an advanced fallback, not the normal plugin workflow.
 
 ## Architecture / 编排
 
@@ -49,7 +53,7 @@ Command-line alternative on all three: `node manage.cjs install "target director
 
 3. In the installed directory run `node manage.cjs doctor`. Edit `config.json` as needed. Then start the bridge and keep its terminal open. Ctrl+C stops the bridge. Reinstalling updates component files while preserving `config.json` and `data/bridge.key`; unrelated nonempty directories are refused.
 4. Import the **same ZIP** into Aide → Plugins → Upload, and enable **Codex Bridge**. Open the plugin workbench for bilingual guidance and connection checks. Import alone does not install/start the host service or change any provider.
-5. Run `node manage.cjs key` **locally** and copy the generated bridge key into Aide's model-provider API Key field. It is a local bridge key, not an OpenAI Platform API key. Never paste it into chat or Git. The optional plugin diagnostic key permits authenticated catalog checks only; the provider key must still be set separately.
+5. Run `node manage.cjs key` **locally** and copy the generated bridge key into Aide's model-provider API Key field. It is a local bridge key, not an OpenAI Platform API key. Never paste it into chat or Git. The plugin workbench uses its paired manager for catalog checks; no diagnostic key belongs in plugin settings.
 
 | Aide provider field | Value |
 | --- | --- |
@@ -126,7 +130,7 @@ Linux：
 node "${XDG_DATA_HOME:-$HOME/.local/share}/aide-codex-bridge/manage.cjs" key
 ```
 
-自选安装目录：运行该目录的 `get-key` 入口，或 `node manage.cjs key "实际安装目录"`。取密钥不会在未安装的解压目录偷偷创建另一个密钥；未安装时会明确提示先安装。安装器会打印适合当前系统的完整取密钥命令。输出只填写到 Aide 模型提供商 API Key / 插件可选诊断密钥，不发到聊天里。The bridge key is generated locally; it is not your Codex login token.
+自选安装目录：运行该目录的 `get-key` 入口，或 `node manage.cjs key "实际安装目录"`。取密钥不会在未安装的解压目录偷偷创建另一个密钥；未安装时会明确提示先安装。安装器会打印适合当前系统的完整取密钥命令。输出只填写到 Aide 模型提供商 API Key，不发到聊天里。The bridge key is generated locally; it is not your Codex login token.
 
 ## 插件内安装与卸载 / Lifecycle workbench
 
@@ -175,3 +179,19 @@ node scripts/live-acceptance.cjs --infer --tools
 See [architecture](docs/ARCHITECTURE.md), [acceptance record](docs/ACCEPTANCE.md) and [source provenance](docs/PROVENANCE.md). Cross-platform CI exercises native Node child processes, install/update, Unicode/space paths, queue/cancellation and npm-shim resolution. It does not prove live Codex inference on every OS/CPU or Windows version.
 
 Official protocol reference: [Codex app-server](https://learn.chatgpt.com/docs/app-server). This integration uses an evolving protocol; changing Codex versions requires revalidation. Wrapper/runtime are MIT, based on the supplied MIT reference bundle. Codex itself and model/account access are not redistributed by this repository.
+
+## Issues / 问题与需求
+
+All public Aide plugins are part of Aide's functionality. Track bugs, feature requests and acceptance summaries centrally in [Aide Issues](https://github.com/skyelan1999/aide/issues), with the `Codex Bridge` component, plugin/host/Aide versions, reproduction and evidence. Implementation, design and delivery artifacts remain in this repository. Current setup work is [Aide #600](https://github.com/skyelan1999/aide/issues/600); native executable discovery is [Aide #602](https://github.com/skyelan1999/aide/issues/602). Public reports must not contain credentials, real prompts or private implementation details.
+
+## Account quota percentages / 账户剩余额度
+
+Open the plugin workbench → **Account quota · Connection settings**, after pairing and starting the host. The panel reads once when entering a ready connection; **Refresh quota** reads again. It displays each returned account bucket and its primary/secondary window separately, with remaining percentage, reset time and observation time. It does not poll in the background.
+
+打开插件工作台 → **账户额度 · 连接设置**。完成连接并启动宿主后，进入页面时读取一次，也可点击“刷新额度”。逐项显示账户额度窗口的剩余百分比、重置时间和查询时间；没有后台轮询。
+
+The authenticated local route is `GET /v1/usage`, using the existing model bridge key; the paired manager exposes the sanitized result through `/api/usage` and `codex_bridge_usage`. It calls only Codex `account/rateLimits/read`, starts no inference turn, reads no auth files, changes no account/provider settings, and never consumes reset credits. Multi-bucket responses take priority over the legacy single bucket. Remaining percentage is `clamp(100 - usedPercent, 0, 100)`. Null/missing/unsupported data stays unavailable; a failed refresh clears the old percentages. Window values describe shared account quota, not monetary balance, a conversation's token usage, model entitlement or guaranteed inference access.
+
+该功能当前在插件工作台的连接设置中展示，不会修改 Aide 公共模型设置弹窗或把额度伪装成金额余额。API-key-only 登录、旧版 CLI、上游失败或未返回窗口时明确显示不可用。它不自动复制、刷新或替换登录令牌。
+
+Protocol reference: [official OpenAI App Server documentation](https://learn.chatgpt.com/docs/app-server#6-rate-limits-chatgpt). Central request and current acceptance: [Aide #604](https://github.com/skyelan1999/aide/issues/604), [quota acceptance](docs/QUOTA-ACCEPTANCE-0.3.0.md). The 0.3.0 package is a candidate until a corresponding Release is published.

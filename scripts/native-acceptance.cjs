@@ -133,14 +133,16 @@ async function install() {
     "Content-Type": "multipart/form-data; boundary=" + b,
   });
   assert.ok([200, 201].includes(r.status), JSON.stringify(r.value));
-  const configured = await request('/api/plugins/codex-bridge/settings','PUT',{settings:{baseURL:'http://host.docker.internal:18531/v1',bridgeKey:fixtureKey}});
+  const configured = await request('/api/plugins/codex-bridge/settings','PUT',{settings:{managerURL:'http://host.docker.internal:18531'}});
   assert.equal(configured.status,200,configured.value?.error);
   console.log("Native ZIP install/upgrade and isolated settings: PASS");
 }
 
 const fixtureKey=crypto.randomBytes(32).toString('hex');
-const {createServer}=require('../runtime/bridge.cjs');
-const modelServer=createServer({key:fixtureKey,maxBody:8192,timeout:5000,rpcFactory:()=>({async initialize(){},async call(method){if(method==='model/list')return{data:[{id:'synthetic-fixture-model'}]};throw Error('Unexpected fixture RPC');},close(){}})});
+const fixtureCode=crypto.randomBytes(6).toString('hex').toUpperCase();let paired=false;
+// Synthetic manager transport; the real Go manager is tested separately.
+const modelServer=http.createServer(async(q,r)=>{r.setHeader('Content-Type','application/json');const info={service:'aide-codex-bridge-manager',version:require('../manifest.json').version};if(q.url==='/health')return r.end(JSON.stringify({...info,pairingProtocol:1}));if(q.url==='/api/pair'&&q.method==='POST'){let body='';for await(const c of q){body+=c;if(body.length>1024){r.writeHead(413).end();return}};if(!paired&&JSON.parse(body).code===fixtureCode){paired=true;return r.end(JSON.stringify({...info,token:fixtureKey}))}r.writeHead(401).end('{}');return}if(q.headers.authorization!=='Bearer '+fixtureKey){r.writeHead(401).end('{}');return}if(q.url==='/api/models')return r.end(JSON.stringify({...info,models:[{id:'synthetic-fixture-model'}]}));if(q.url==='/api/status')return r.end(JSON.stringify({...info,installed:true,running:true}));r.writeHead(404).end('{}')});
+modelServer.shutdown=()=>{modelServer.closeAllConnections();modelServer.close()};
 async function serve(){
  let bridge;
  const server=http.createServer(async(req,res)=>{try{
@@ -159,7 +161,8 @@ async function serve(){
 (async()=>{
  await new Promise(r=>modelServer.listen(18531,'127.0.0.1',r));
  await install();const bridge=await open();
- const health=await invoke(bridge,'codex_bridge_connection_info',{});assert.equal(JSON.parse(health.result).verifiedBridge,true,JSON.stringify(health));
+ const pairing=await invoke(bridge,'codex_bridge_pair',{code:fixtureCode});assert.equal(JSON.parse(pairing.result).paired,true);assert.ok(!JSON.stringify(pairing).includes(fixtureKey));
+ const health=await invoke(bridge,'codex_bridge_connection_info',{});assert.equal(JSON.parse(health.result).phase,'ready',JSON.stringify(health));
  const models=await invoke(bridge,'codex_bridge_models',{});assert.equal(JSON.parse(models.result).models[0].id,'synthetic-fixture-model');assert.ok(!JSON.stringify(models).includes(fixtureKey));
  fs.writeFileSync(root+'/acceptance.json',JSON.stringify({installed:true,nativeHealth:true,nativeModels:true,syntheticCatalog:true},null,2)+'\n');console.log('Installed ZIP -> native workbench tools -> local bridge catalog: PASS');
  if(process.argv.includes('--serve'))await serve();else modelServer.shutdown();
