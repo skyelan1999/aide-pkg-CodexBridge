@@ -167,7 +167,7 @@ python scripts/package-codex-bridge.py --out dist
 node --test scripts/*.test.cjs
 ```
 
-The deterministic 21-file plugin ZIP uses an explicit allowlist. It contains host launchers/runtime but no binaries, local config, auth, keys or test evidence. Run the generated ZIP through Aide's normal plugin validation before distributing.
+The deterministic plugin ZIP uses an explicit allowlist. It contains host launchers/runtime but no binaries, local config, auth, keys or test evidence. Run the generated ZIP through Aide's normal plugin validation before distributing.
 
 ```sh
 # Real host catalog only, no inference
