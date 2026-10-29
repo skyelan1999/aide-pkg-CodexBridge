@@ -1,0 +1,70 @@
+{
+  "version": "0.3.3",
+  "issue": "https://github.com/skyelan1999/aide/issues/610",
+  "reportedProblem": "Windows user reports Install has no response and status stays Not installed. Exact cause on user machine is unconfirmed.",
+  "assets": [
+    {
+      "file": "codex-bridge-0.3.3.zip",
+      "bytes": 34656,
+      "sha256": "ba76043b2e7900dd43cc58d15289b655a89aa50f9571db39920ebcdbf68082a7"
+    },
+    {
+      "file": "codex-bridge-manager-0.3.3-darwin-amd64.zip",
+      "bytes": 3008174,
+      "sha256": "5aa11a2d9f48d3a6d47d0bd67568c4b96d686686cc70f7a6be7c77a7cb4691b1"
+    },
+    {
+      "file": "codex-bridge-manager-0.3.3-darwin-arm64.zip",
+      "bytes": 2770060,
+      "sha256": "7b1168df88751825df6103894412018a057bd69d23f7763d0da369555a5e065d"
+    },
+    {
+      "file": "codex-bridge-manager-0.3.3-linux-amd64.tar.gz",
+      "bytes": 2964215,
+      "sha256": "fa250bd2968abce0b210779796a60dd5362584c158fbf913898aeec6c22dc395"
+    },
+    {
+      "file": "codex-bridge-manager-0.3.3-linux-arm64.tar.gz",
+      "bytes": 2678560,
+      "sha256": "145a85f73ef35d7b3fd3262485333616ad52f08da82c33acebe10166500beedc"
+    },
+    {
+      "file": "codex-bridge-manager-0.3.3-windows-amd64.zip",
+      "bytes": 3036944,
+      "sha256": "6259d79fe3f1f3b86938853b6a838b255d07755032845e0cbc440d6c923b2741"
+    },
+    {
+      "file": "codex-bridge-manager-0.3.3-windows-arm64.zip",
+      "bytes": 2714572,
+      "sha256": "604e7dab8dfed3a9eda0a29ae98cf89f1bad2493b6868c3fa7a8ed15dea710b5"
+    }
+  ],
+  "checks": [
+    {
+      "name": "51 Node synthetic tests including actual page JS, blocked-action no-dispatch, auth-loss and timeout recovery",
+      "status": "PASS"
+    },
+    {
+      "name": "Linux ARM64 Go race/vet and native macOS ARM64 tests",
+      "status": "PASS"
+    },
+    {
+      "name": "Six native archive layouts and embedded/included plugin identity",
+      "status": "PASS"
+    },
+    {
+      "name": "Actual local browser and native HTTP fixture: install, uninstall confirm, language switch and lost-auth recovery",
+      "status": "PASS",
+      "evidence": "evidence/install-feedback-0.3.3.png"
+    },
+    {
+      "name": "User Windows desktop failure reproduced and resolved",
+      "status": "NOT_VERIFIED"
+    },
+    {
+      "name": "Real account inference/quota",
+      "status": "NOT_RUN"
+    }
+  ],
+  "scope": "Synthetic fixtures only; no real account credentials, provider settings, Aide core or 9999 changes."
+}

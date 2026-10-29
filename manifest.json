@@ -2,7 +2,7 @@
   "id": "codex-bridge",
   "name": "Codex 模型桥接 / Codex Bridge",
   "description": "通过独立宿主服务将本地 Codex 接入 Aide 模型提供商，支持三端安装、SSE、工具交接和有界并发。 / Local Codex model-provider adapter.",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "main": "index.js",
   "settingsSchema": {
     "type": "object",
