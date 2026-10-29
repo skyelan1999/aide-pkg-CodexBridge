@@ -33,15 +33,15 @@ test('refuse to overwrite unrelated nonempty directory', () => {
   assert.notEqual(execute('install', other).status, 0);
   assert.equal(fs.readFileSync(path.join(other, 'keep'), 'utf8'), 'original');
 });
-test('aide plugin declares executable diagnostic; has password-only diagnostic key and bounded local URL', async () => {
+test('plugin settings are non-secret and guided tools use bounded local URLs', async () => {
   const manifest = JSON.parse(fs.readFileSync(path.join(bundle, 'manifest.json')));
   assert.equal(manifest.id, 'codex-bridge');
-  assert.deepEqual(Object.keys(manifest.settingsSchema.properties), ['baseURL', 'bridgeKey', 'managerURL', 'managerKey']);
-  assert.equal(manifest.settingsSchema.properties.bridgeKey.format, 'password');
+  assert.deepEqual(Object.keys(manifest.settingsSchema.properties), ['connectionMode']);
+  assert.equal(manifest.settingsSchema.properties.connectionMode.default, 'auto');
   let tool;
-  require(path.join(bundle, 'index.js')).apply({ settings: { baseURL: 'file:///invalid' }, tool(def) { if(def.name==='codex_bridge_connection_info') tool = def; } });
-  assert.equal(tool.name, 'codex_bridge_connection_info');
-  await assert.rejects(tool.handler(), /Invalid bridge URL/);
+  require(path.join(bundle, 'index.js')).apply({ settings: { managerURL: 'file:///invalid' }, tool(def) { if(def.name==='codex_bridge_manager_status') tool = def; } });
+  assert.equal(tool.name, 'codex_bridge_manager_status');
+  await assert.rejects(tool.handler(), /local service/);
 });
 test('package syntax and launchers', () => {
   for (const file of ['index.js', 'manage.cjs', 'runtime/bridge.cjs']) assert.equal(spawnSync(process.execPath, ['--check', path.join(bundle, file)]).status, 0);

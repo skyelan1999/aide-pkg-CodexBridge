@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Aide / Codex Bridge feedback
+    url: https://github.com/skyelan1999/aide/issues/new?title=%5BCodex%20Bridge%5D%20
+    about: Public plugin bugs, feature requests and acceptance reports are tracked centrally in Aide. Identify Codex Bridge and its version; omit credentials and private data.

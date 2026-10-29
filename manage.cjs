@@ -7,7 +7,7 @@ const { spawn, spawnSync } = require('node:child_process');
 const { randomBytes } = require('node:crypto');
 const root = __dirname;
 const { resolveLaunch } = require('./runtime/launch.cjs');
-const payload = ['manifest.json', 'index.js', 'config.example.json', 'manage.cjs', 'README.md', 'runtime/bridge.cjs', 'runtime/launch.cjs', 'viewer.html', 'LICENSE', 'uninstall.cmd', 'uninstall.command', 'uninstall.sh', 'get-key.cmd', 'get-key.command', 'get-key.sh', 'install.cmd', 'start.cmd', 'install.sh', 'start.sh', 'install.command', 'start.command'];
+const payload = ['manifest.json', 'index.js','connection.cjs', 'config.example.json', 'manage.cjs', 'README.md', 'runtime/bridge.cjs', 'runtime/launch.cjs', 'viewer.html', 'LICENSE', 'uninstall.cmd', 'uninstall.command', 'uninstall.sh', 'get-key.cmd', 'get-key.command', 'get-key.sh', 'install.cmd', 'start.cmd', 'install.sh', 'start.sh', 'install.command', 'start.command'];
 function defaultTarget(platform = process.platform, env = process.env, home = os.homedir()) {
   if (platform === 'win32') return path.win32.join(env.LOCALAPPDATA || path.win32.join(home, 'AppData', 'Local'), 'aide-codex-bridge');
   if (platform === 'darwin') return path.posix.join(home, 'Library', 'Application Support', 'aide-codex-bridge');

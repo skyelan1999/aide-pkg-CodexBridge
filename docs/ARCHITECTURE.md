@@ -1,8 +1,8 @@
-# Codex Bridge 0.2.0 architecture
+# Codex Bridge architecture
 
 ## Components
 
-- `index.js`: read-only diagnostic tools plus separately paired, allowlisted lifecycle tools. Settings URL is limited to local HTTP(S) `/v1` endpoints, without URL credentials, query or fragment. Model arguments cannot supply a destination or token. Requests reject redirects. `codex_bridge_connection_info` checks the minimal health identity; `codex_bridge_models` uses the optional password setting and returns catalog IDs only.
+- `index.js` (0.2.x historical design; superseded by the guided connection section below): read-only diagnostic tools plus separately paired, allowlisted lifecycle tools. Settings URL is limited to local HTTP(S) `/v1` endpoints, without URL credentials, query or fragment. Model arguments cannot supply a destination or token. Requests reject redirects. `codex_bridge_connection_info` checks the minimal health identity; `codex_bridge_models` uses the optional password setting and returns catalog IDs only.
 - `viewer.html`: packaged bilingual workbench using the public Aide MessagePort protocol. It calls declared diagnostics and fixed lifecycle tools. Native manager requests use the separate password setting; arbitrary commands, Codex auth files and provider-setting writes are not exposed.
 - `manage.cjs`: user-initiated per-user host installation, dependency diagnosis and foreground launch. Configuration/key survive reinstall. No background autostart. `install.*` and `start.*` are thin platform entry points without PowerShell.
 - `runtime/launch.cjs`: resolves direct binaries/JS and official Windows npm shims to argument-array process calls. No arbitrary shell strings. POSIX uses a child process group; Windows cleanup uses the system `taskkill.exe /T` command, not PowerShell.
@@ -33,3 +33,12 @@ The control origin defaults to loopback port 8788. Only fixed authenticated JSON
 The 0.2.0 manager fixes the GUI PATH case by resolving known Node locations and known macOS Codex app binary locations, then persisting an absolute Codex path only when the config still contains the bare default. Explicit custom paths are preserved. Diagnostic version commands never call a language model. Model listing remains a separate acceptance step, and model access still requires an actual inference test.
 
 Limitations: prerequisites are not silently installed; no account login automation, automatic service-at-login, OS signing/notarization or provider overwrite. Cross-compilation is not acceptance on every Windows/Linux release. The browser acceptance fixture uses synthetic storage and process inputs, never production account data.
+
+
+## 0.3.0 guided connection
+
+The workbench detects a compatible local manager using metadata-only `/health`, distinguishes disconnected/unpaired/uninstalled/stopped/running states, and disables host mutation until paired. A short-lived owner-issued code is consumed by `/api/pair`; the plugin stores the returned scoped token in permission-restricted private plugin state, outside the package and non-secret settings. The manager stores only token hashes, limits clients and bad code attempts, consumes successful codes, persists revocation and refuses owner routes to client grants even when the owner-UI header is forged. This is not encryption or a sandbox against same-account programs.
+
+The manager's `/api/models` reads the owned installation's model key and configured local port, refuses redirects, bounds response size/count and returns model IDs only. No inference or provider write is performed. The plugin never returns credentials and ignores legacy secret settings. Tools omit local-only scheduling contracts because their effects include external host state and private storage; Aide therefore keeps conservative execution-domain exclusion. All host lifecycle requests remain fixed operations, without command/path injection or arbitrary destinations. Native setup retains explicit owner-only model-key access for the existing Aide provider UI.
+
+`marked()` recognizes directories whose settings were retained after uninstall; `installed()` additionally requires actual program files. Safe reinstall can use the marker without falsely enabling Start. Version identities, payload and download names derive from the manifest; see [version policy](VERSIONING.md).

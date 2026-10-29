@@ -95,6 +95,9 @@ func TestInstallRepairUninstallPreserveSecrets(t *testing.T) {
 			t.Fatal(name, e)
 		}
 	}
+	if m.installed() {
+		t.Fatal("uninstalled program reported installed")
+	}
 	if e := m.install(); e != nil {
 		t.Fatal(e)
 	}
@@ -258,6 +261,11 @@ func TestManagedRuntimeStartStopWithSyntheticCodex(t *testing.T) {
 	if last != "" {
 		t.Fatal("expected stop reported as failure", last)
 	}
+	stopped := call(m, "POST", "/api/action", `{"action":"stop"}`, m.control, "")
+	if stopped.Code != 200 || !strings.Contains(stopped.Body.String(), `"running":false`) {
+		t.Fatal("stop returned stale running state", stopped.Code, stopped.Body.String())
+	}
+
 }
 
 // Explicit opt-in only: actual HTTP/UI fixture, synthetic storage and no model account.
@@ -281,7 +289,7 @@ func TestBrowserFixture(t *testing.T) {
 		t.Fatal(e)
 	}
 	defer os.Remove(where)
-	time.Sleep(240 * time.Second)
+	time.Sleep(600 * time.Second)
 }
 func TestQuitRequiresOwnerUIAndRejectsFurtherActions(t *testing.T) {
 	m := fixture(t)

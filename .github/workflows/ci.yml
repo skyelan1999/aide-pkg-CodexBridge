@@ -52,7 +52,8 @@ jobs:
       - run: python scripts/package-codex-bridge.py --out dist
       - name: Test actual manager and subprocess lifecycle
         run: |
-          cp dist/codex-bridge-0.2.0.zip cmd/host-manager/payload.zip
+          version=$(node -p "require('./manifest.json').version")
+          cp "dist/codex-bridge-$version.zip" cmd/host-manager/payload.zip
           cd cmd/host-manager
           if [ "${{ runner.os }}" = Windows ]; then
             go test -v ./...

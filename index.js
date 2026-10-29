@@ -1,46 +1,23 @@
 'use strict';
-const localHosts = new Set(['127.0.0.1', 'localhost', '[::1]', 'host.docker.internal']);
-function bridgeURL(value) {
-  let url;
-  try { url = new URL(value); } catch { throw Error('Invalid bridge URL'); }
-  if (!['http:', 'https:'].includes(url.protocol) || !localHosts.has(url.hostname) || url.username || url.password || url.search || url.hash || !['/v1','/v1/'].includes(url.pathname)) throw Error('Invalid bridge URL: use a local /v1 endpoint without credentials');
-  return url.href.replace(/\/$/, '');
+const {store}=require('./connection.cjs');
+const version=require('./manifest.json').version;
+const localHosts=new Set(['127.0.0.1','localhost','[::1]','host.docker.internal']);
+function localURL(value,bridge){let u;try{u=new URL(value)}catch{throw Error('Invalid local service URL')};if(!['http:','https:'].includes(u.protocol)||!localHosts.has(u.hostname)||u.username||u.password||u.search||u.hash||!(bridge?['/v1','/v1/']:['/','']).includes(u.pathname))throw Error('Use a local service address without credentials');return bridge?u.href.replace(/\/$/,''):u.origin;}
+const managerURL=value=>localURL(value,false),bridgeURL=value=>localURL(value,true);
+async function rpc(base,route,token,body){let r;try{r=await fetch(base+route,{method:body?'POST':'GET',headers:{...(token?{Authorization:'Bearer '+token}:{}),'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined,signal:AbortSignal.timeout(route==='/health'?1500:route==='/api/models'?35000:15000),redirect:'error'})}catch{throw Error('Manager unavailable / 宿主管理器未启动，请先打开安装的管理器')};let text='';for await(const c of r.body){text+=Buffer.from(c).toString('utf8');if(Buffer.byteLength(text)>65536)throw Error('Manager response too large')};let d;try{d=JSON.parse(text)}catch{throw Error('Incompatible manager; update the native manager / 请更新宿主管理器')};if(!r.ok){if(r.status===401&&route==='/api/pair')throw Error('Connection code is invalid, expired or already used / 连接码错误、已过期或已使用，请重新生成');if(r.status===401)throw Error('Connection expired or revoked. Generate a new code in the native manager / 连接已失效，请重新生成连接码');throw Error(String(d.error||'Manager request failed').replaceAll(token||'__NO_TOKEN__','[REDACTED]').slice(0,300))};if(d.service!=='aide-codex-bridge-manager')throw Error('Unexpected manager identity');return d;}
+function safe(d){return Object.fromEntries(['service','version','platform','arch','installed','running','externalBridge','nodeFound','codexFound'].filter(k=>['string','boolean'].includes(typeof d[k])).map(k=>[k,d[k]]))}
+function apply(api){
+ const settings=api.settings||{};
+ const candidates=()=>settings.managerURL?[managerURL(settings.managerURL)]:settings.connectionMode==='native'?['http://127.0.0.1:8788']:settings.connectionMode==='docker'?['http://host.docker.internal:8788']:['http://127.0.0.1:8788','http://host.docker.internal:8788'];
+ async function discover(){for(const base of candidates()){try{const d=await rpc(base,'/health');if(d.pairingProtocol===1)return {base,info:d}}catch{}}return null;}
+ async function paired(){const value=store.read();if(!value)throw Error('Connect the native manager with a one-time code first / 请先在下方输入一次性连接码');return {...value,base:managerURL(value.base)}}
+ const register=(name,description,properties,required,handler,write=false)=>api.tool({name,description,parameters:{type:'object',properties,required,additionalProperties:false},handler});
+ async function status(){let value=store.read();if(value){try{const d=await rpc(managerURL(value.base),'/api/status',value.token);return {...safe(d),pluginVersion:version,paired:true,phase:d.externalBridge?'external_bridge':!d.installed?'host_missing':!d.running?'host_stopped':'ready',legacySecretSettings:!!(settings.bridgeKey||settings.managerKey)}}catch(e){return {pluginVersion:version,paired:false,phase:'reconnect',message:e.message}}}const found=await discover();return {pluginVersion:version,paired:false,phase:found?'unpaired':'manager_missing',managerVersion:found?.info.version,legacySecretSettings:!!(settings.bridgeKey||settings.managerKey)}}
+ register('codex_bridge_manager_status','Read setup state without secrets, inference or configuration changes.',{},[],async()=>JSON.stringify(await status()));
+ register('codex_bridge_connection_info','Check paired host setup. Does not confirm model access or modify providers.',{},[],async()=>JSON.stringify(await status()));
+ register('codex_bridge_pair','Connect from the plugin workbench using a single-use, two-minute code created in the native owner window. Never ask for keys in chat. Returns no credentials.',{code:{type:'string',minLength:12,maxLength:14}},['code'],async args=>{if(!args||Object.keys(args).length!==1||typeof args.code!=='string'||!/^([a-f0-9]{12}|[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4})$/i.test(args.code))throw Error('Enter the connection code shown by the native manager / 请输入管理器显示的连接码');const found=await discover();if(!found)throw Error('Open the 0.3.0 or later native manager first / 请先打开0.3.0或更新的宿主管理器');const d=await rpc(found.base,'/api/pair',null,{code:args.code});if(!/^[a-f0-9]{64}$/.test(d.token))throw Error('Invalid pairing response');store.write({base:found.base,token:d.token});return JSON.stringify({paired:true,pluginVersion:version,managerVersion:d.version})},true);
+ register('codex_bridge_disconnect','Forget this backend connection when explicitly requested. Does not stop the host or revoke other clients.',{},[],async()=>{store.clear();return JSON.stringify({paired:false})},true);
+ register('codex_bridge_host_action','Run an explicitly requested fixed host action after pairing. No arbitrary shell, path, account or provider writes.',{action:{type:'string',enum:['install','start','stop','restart','doctor','repair','uninstall']}},['action'],async args=>{if(!args||Object.keys(args).length!==1||!['install','start','stop','restart','doctor','repair','uninstall'].includes(args.action))throw Error('Unsupported host action');const p=await paired();return JSON.stringify(safe(await rpc(p.base,'/api/action',p.token,args)))},true);
+ register('codex_bridge_models','Read model IDs through the paired manager. No second diagnostic key, inference or provider changes. Catalog is not entitlement.',{},[],async()=>{const p=await paired();const d=await rpc(p.base,'/api/models',p.token);if(!Array.isArray(d.models))throw Error('Invalid model catalog');return JSON.stringify({models:d.models.slice(0,200).map(m=>({id:String(m.id).slice(0,200)})),note:'Catalog only; inference has not been tested.'})});
 }
-function managerURL(value){let u;try{u=new URL(value)}catch{throw Error('Invalid manager URL')};if(!['http:','https:'].includes(u.protocol)||!localHosts.has(u.hostname)||u.username||u.password||u.search||u.hash||!['','/'].includes(u.pathname))throw Error('Use a local manager origin without credentials or path');return u.origin;}
-module.exports = {
-  name: 'codex-bridge',
-  apply(api) {
-    const managerRequest=async(action)=>{
-      const base=managerURL(api.settings?.managerURL||'http://host.docker.internal:8788');
-      const key=String(api.settings?.managerKey||'');if(!/^[a-f0-9]{64}$/.test(key))throw Error('Open the native manager setup and pair its separate manager key in plugin settings / 请先打开宿主管理器，在插件设置中配对管理密钥');
-      let r;try{r=await fetch(base+(action?'/api/action':'/api/status'),{method:action?'POST':'GET',headers:{Authorization:'Bearer '+key,'Content-Type':'application/json'},body:action?JSON.stringify({action}):undefined,redirect:'error',signal:AbortSignal.timeout(15000)})}catch{throw Error('Manager unavailable. Open the native manager application first / 请先打开宿主管理器应用');}
-      let text='';for await(const chunk of r.body){text+=Buffer.from(chunk).toString('utf8');if(Buffer.byteLength(text)>8192)throw Error('Manager response too large');}let d;try{d=JSON.parse(text)}catch{throw Error('Invalid manager response')};if(!r.ok)throw Error(String(d.error||'Manager action failed').replaceAll(key,'[REDACTED]').slice(0,500));
-      // Rebuild an allowlisted result: never return credentials or provider configuration.
-      if(d.service!=='aide-codex-bridge-manager')throw Error('Unexpected manager identity');
-      return JSON.stringify(Object.fromEntries(['service','version','platform','arch','installed','running','externalBridge','nodeFound','codexFound','lastError'].filter(k=>['string','boolean'].includes(typeof d[k])).map(k=>[k,typeof d[k]==='string'?d[k].replaceAll(key,'[REDACTED]').slice(0,500):d[k]])));
-    };
-    api.tool({name:'codex_bridge_manager_status',description:'Read status of the separately paired native manager. No inference or account changes.',parameters:{type:'object',properties:{},additionalProperties:false},scheduling:{resources:[]},handler:()=>managerRequest()});
-    api.tool({name:'codex_bridge_host_action',description:'Manage only this plugin’s installed host bridge through a separately paired local manager. Fixed actions only; no shell command, arbitrary path, provider overwrite or account access. Use only when explicitly requested.',parameters:{type:'object',properties:{action:{type:'string',enum:['install','start','stop','restart','doctor','repair','uninstall']}},required:['action'],additionalProperties:false},scheduling:{resources:['codex-bridge-host']},handler:args=>{if(!args||Object.keys(args).length!==1||!['install','start','stop','restart','doctor','repair','uninstall'].includes(args.action))throw Error('Unsupported host action');return managerRequest(args.action)}});
-    const read = () => ({ baseURL: bridgeURL(api.settings?.baseURL || 'http://host.docker.internal:8787/v1'), key: String(api.settings?.bridgeKey || '') });
-    api.tool({ name: 'codex_bridge_connection_info', description: 'Check the local Codex bridge identity and obtain provider setup guidance. No inference or settings changes.', parameters: {type:'object',properties:{},additionalProperties:false}, scheduling:{resources:[]}, async handler() {
-      const {baseURL} = read();
-      try {
-        const r = await fetch(baseURL.replace(/\/v1$/, '/health'), {signal:AbortSignal.timeout(5000),redirect:'error'});
-        const value = await r.json();
-        const valid = r.ok && value.service === 'aide-codex-bridge';
-        return JSON.stringify({baseURL,reachable:true,verifiedBridge:valid,version:valid?value.version:undefined,provider:{type:'OpenAI compatible / Chat Completions',baseURL,apiKey:'Use the locally generated bridge key',model:'Choose an ID from the authenticated catalog'},note:'Health is not login or inference acceptance. Install/start the host component separately; never paste keys into chat.'});
-      } catch { return JSON.stringify({baseURL,reachable:false,verifiedBridge:false,note:'Start the host bridge and check the URL/firewall. Docker and native Aide use different host addresses.'}); }
-    }});
-    api.tool({name:'codex_bridge_models',description:'Read authenticated local Codex model catalog with the diagnostic key stored in plugin settings. No inference. Catalog is not entitlement.',parameters:{type:'object',properties:{},additionalProperties:false},scheduling:{resources:[]},async handler(){
-      const {baseURL,key}=read(); if(!key) throw Error('Set the optional diagnostic key in plugin settings; do not send it in chat.');
-      let r; try {r=await fetch(baseURL+'/models',{headers:{Authorization:'Bearer '+key},signal:AbortSignal.timeout(30000),redirect:'error'});} catch {throw Error('Bridge catalog request failed; check the local service.');}
-      if(!r.ok) throw Error('Bridge catalog HTTP '+r.status);
-      let data; try {data=await r.json();} catch {throw Error('Invalid bridge catalog response');}
-      if(!Array.isArray(data.data)) throw Error('Invalid bridge catalog');
-      return JSON.stringify({models:data.data.slice(0,200).map(m=>({id:String(m.id).slice(0,200)})),note:'Catalog only. A successful inference turn is required to confirm account/model access.'});
-    }});
-  },
-};
-module.exports.bridgeURL=bridgeURL;
-
-module.exports.managerURL=managerURL;
+module.exports={name:'codex-bridge',apply,bridgeURL,managerURL};
