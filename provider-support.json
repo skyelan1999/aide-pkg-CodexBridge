@@ -1,0 +1,41 @@
+{
+  "protocol": 1,
+  "id": "codex-bridge",
+  "name": "Codex account quota",
+  "revision": "2026-10-31",
+  "sources": [
+    "https://developers.openai.com/codex/app-server/"
+  ],
+  "providers": [
+    {
+      "host": "host.docker.internal",
+      "scheme": "http",
+      "port": "8787",
+      "paths": [
+        "/v1"
+      ]
+    },
+    {
+      "host": "localhost",
+      "scheme": "http",
+      "port": "8787",
+      "paths": [
+        "/v1"
+      ]
+    },
+    {
+      "host": "127.0.0.1",
+      "scheme": "http",
+      "port": "8787",
+      "paths": [
+        "/v1"
+      ]
+    }
+  ],
+  "models": [],
+  "balance": {
+    "path": "/v1/usage",
+    "auth": "model-bearer",
+    "format": "quota-windows"
+  }
+}

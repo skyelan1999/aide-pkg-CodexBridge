@@ -54,7 +54,7 @@ function safeSnapshot(value) {
 module.exports={normalizeRateLimits,safeSnapshot};
 
 return module.exports; })();
-const version="0.4.0";
+const version="0.4.1";
 const localHosts=new Set(['127.0.0.1','localhost','[::1]','host.docker.internal']);
 function localURL(value,bridge){let u;try{u=new URL(value)}catch{throw Error('Invalid local service URL')};if(!['http:','https:'].includes(u.protocol)||!localHosts.has(u.hostname)||u.username||u.password||u.search||u.hash||!(bridge?['/v1','/v1/']:['/','']).includes(u.pathname))throw Error('Use a local service address without credentials');return bridge?u.href.replace(/\/$/,''):u.origin;}
 const managerURL=value=>localURL(value,false),bridgeURL=value=>localURL(value,true);

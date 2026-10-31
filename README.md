@@ -1,3 +1,5 @@
+Version 0.4.1 requires Aide provider-account-quota-v1 support (a capable source build, or a compatible future release; marketplace release floor RC2). Older hosts must keep 0.4.0. The local bridge host must support /v1/usage (0.3.0+).
+
 # Codex Bridge 0.4.0 — Aide 内管理 / In-plugin management
 
 新版 Aide 启动器支持 `host.component.codex-bridge` 时，打开插件即可操作 **安装、启动、停止、卸载、生成密钥**。不用另下 EXE，不用打开独立管理器网页，不用填写管理连接码。宿主组件随 Aide 镜像提供，启动器校验后自动运行；安装桥接仍由你点击“安装”执行。
@@ -81,3 +83,7 @@ Blocked actions now explain the unmet prerequisite without issuing a mutation. L
 0.3.4 将插件入口编译为自包含文件，修复上传 ZIP 时 `Cannot find module './connection.cjs'`。在 Aide 上传本包的 `codex-bridge-0.3.4.zip`，不是 GitHub 自动生成的 Source code ZIP，也不是宿主管理器外层安装包。现有 Aide 无需为此升级。
 
 The generated plugin entry is self-contained for Aide's entry-only upload validator. Import `codex-bridge-0.3.4.zip`, not the GitHub source archive or the outer native-manager archive. This patch needs no Aide core update.
+
+## Account pool quota (0.4.1)
+
+The plugin declares a data-only provider-support catalog for the local bridge on port8787. A compatible Aide host displays remaining percentages per returned quota window and reset times in the account pool. Credentials stay in Aide and are sent only to the selected bridge origin. This is shared account quota, not USD balance. No inference or earned reset is consumed by reads. The bridge host must support GET /v1/usage (0.3.0+); older hosts remain unavailable until upgraded. Aide requires provider-account-quota-v1 source capability or a future compatible released version. Pricing is not supplied for the bridge.

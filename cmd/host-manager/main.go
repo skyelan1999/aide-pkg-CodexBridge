@@ -34,7 +34,7 @@ var payload []byte
 var ui string
 
 var launchers = map[string]bool{"install.sh": true, "install.command": true, "start.sh": true, "start.command": true, "get-key.sh": true, "get-key.command": true, "uninstall.sh": true, "uninstall.command": true}
-var owned = []string{"manifest.json", "index.js", "connection.cjs", "quota.cjs", "viewer.html", "manage.cjs", "config.example.json", "README.md", "LICENSE", "runtime/bridge.cjs", "runtime/launch.cjs", "install.cmd", "start.cmd", "uninstall.cmd", "get-key.cmd", "install.sh", "start.sh", "uninstall.sh", "get-key.sh", "install.command", "start.command", "uninstall.command", "get-key.command"}
+var owned = []string{"manifest.json", "provider-support.json", "index.js", "connection.cjs", "quota.cjs", "viewer.html", "manage.cjs", "config.example.json", "README.md", "LICENSE", "runtime/bridge.cjs", "runtime/launch.cjs", "install.cmd", "start.cmd", "uninstall.cmd", "get-key.cmd", "install.sh", "start.sh", "uninstall.sh", "get-key.sh", "install.command", "start.command", "uninstall.command", "get-key.command"}
 
 func token() string {
 	b := make([]byte, 32)
