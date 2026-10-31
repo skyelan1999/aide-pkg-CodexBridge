@@ -31,3 +31,8 @@ test('authenticated quota endpoint only reads rate limits and closes the isolate
 test('unsupported/read failure is explicitly unavailable and never leaks upstream errors',async t=>{
  const f=await fixture(t,null,true);const res=await f.get(true);assert.equal(res.status,200);const d=await res.json();assert.equal(d.available,false);assert.equal(d.reason,'unavailable');assert.deepEqual(d.buckets,[]);assert.equal(JSON.stringify(d).includes('PRIVATE'),false);
 });
+test('packaged quota capability is plugin-owned, local-origin scoped and not a pricing declaration',()=>{
+ const fs=require('node:fs'),path=require('node:path');const root=path.resolve(__dirname,'../dist/stage');
+ const manifest=JSON.parse(fs.readFileSync(path.join(root,'manifest.json'),'utf8'));const c=JSON.parse(fs.readFileSync(path.join(root,manifest.providerSupport.catalog),'utf8'));
+ assert.equal(manifest.providerSupport.protocol,1);assert.deepEqual(c.models,[]);assert.equal(c.balance.path,'/v1/usage');assert.equal(c.balance.auth,'model-bearer');assert.equal(c.balance.format,'quota-windows');assert(c.providers.every(p=>p.scheme==='http'&&p.port==='8787'&&['localhost','127.0.0.1','host.docker.internal'].includes(p.host)));assert.equal(c.currency,undefined);
+});
