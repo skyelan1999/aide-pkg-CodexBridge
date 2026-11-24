@@ -1,4 +1,4 @@
-Version 0.4.1 requires Aide provider-account-quota-v1 support (a capable source build, or a compatible future release; marketplace release floor RC2). Older hosts must keep 0.4.0. The local bridge host must support /v1/usage (0.3.0+).
+Version 0.4.1+ requires Aide provider-account-quota-v1 support (a capable source build, or a compatible future release; marketplace release floor RC2). Older hosts must keep 0.4.0. The local bridge host must support /v1/usage (0.3.0+). Aide dynamic tools require Codex CLI 0.92.0 or newer; 0.4.2 reports an explicit upgrade error for older CLIs instead of silently returning text.
 
 # Codex Bridge 0.4.0 — Aide 内管理 / In-plugin management
 

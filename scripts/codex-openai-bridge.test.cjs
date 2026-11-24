@@ -8,6 +8,7 @@ async function fixture(t, behavior = 'text', options = {}) {
   const server = createServer({ key: 'test-key', maxBody: 4096, maxConcurrent: 2, timeout: 80, ...options,
     rpcFactory() {
       const rpc = { onEvent() {}, closed: false, async initialize() {},
+        assertDynamicTools() { this.dynamicToolsChecked = true; if (options.toolCheckError) { const error = Error('Codex CLI 0.91.0 does not support Aide tool plugins; upgrade to Codex CLI 0.92.0 or newer. Text chat is unchanged.'); error.status = 400; throw error; } },
         async call(method, params) {
           if (method === 'config/read') return { config: { mcp_servers: { private_service: {} } } };
           if (method === 'model/list') return { data: [{ id: 'available-model', supportedReasoningEfforts: [{ reasoningEffort: 'low' }, { reasoningEffort: 'high' }] }] };
@@ -71,8 +72,18 @@ test('dynamic tools are returned for aide execution in JSON and SSE', async t =>
   assert.equal(output.choices[0].finish_reason, 'tool_calls');
   assert.deepEqual(JSON.parse(output.choices[0].message.tool_calls[0].function.arguments), { q: '中文' });
   assert.equal(f.instances[0].closed, true);
+  assert.equal(f.instances[0].dynamicToolsChecked, true);
   const stream = await (await f.post({ ...request, stream: true })).text();
   assert.match(stream, /"index":0,"id":"call-1"/);
+});
+test('old Codex CLI fails tool requests before starting a thread', async t => {
+  const f = await fixture(t, 'text', { toolCheckError: true });
+  const request = { ...body, tools: [{ type: 'function', function: { name: 'lookup', parameters: { type: 'object' } } }] };
+  const response = await f.post(request);
+  assert.equal(response.status, 400);
+  assert.match((await response.json()).error.message, /0.92.0 or newer/);
+  assert.equal(f.instances[0].thread, undefined);
+  assert.equal(f.instances[0].closed, true);
 });
 test('unsupported inputs and size limits fail before spawning', async t => {
   const f = await fixture(t);

@@ -6,7 +6,7 @@ const path = require('node:path');
 const { spawn, spawnSync } = require('node:child_process');
 const { randomBytes } = require('node:crypto');
 const root = __dirname;
-const { resolveLaunch } = require('./runtime/launch.cjs');
+const { resolveLaunch, dynamicToolsSupported } = require('./runtime/launch.cjs');
 const payload = ['manifest.json','provider-support.json', 'index.js','connection.cjs', 'quota.cjs', 'config.example.json', 'manage.cjs', 'README.md', 'runtime/bridge.cjs', 'runtime/launch.cjs', 'viewer.html', 'LICENSE', 'uninstall.cmd', 'uninstall.command', 'uninstall.sh', 'get-key.cmd', 'get-key.command', 'get-key.sh', 'install.cmd', 'start.cmd', 'install.sh', 'start.sh', 'install.command', 'start.command'];
 function defaultTarget(platform = process.platform, env = process.env, home = os.homedir()) {
   if (platform === 'win32') return path.win32.join(env.LOCALAPPDATA || path.win32.join(home, 'AppData', 'Local'), 'aide-codex-bridge');
@@ -129,9 +129,9 @@ function doctor(json = false) {
   const launch = resolveLaunch(c.codex || 'codex');
   const result = spawnSync(launch.command, [...launch.prefix, '--version'], { encoding: 'utf8', timeout: 10000, maxBuffer: 65536, windowsHide: true });
   if (result.error || result.status !== 0 || !/^codex-cli\s+\S+/.test(result.stdout.trim()) || result.stdout.trim().length > 512) throw new Error('Cannot run Codex executable; install Codex CLI or set config.json codex to its executable path.');
-  const verified = {executablePath: launch.prefix[0] || launch.command, version: result.stdout.trim()};
+  const verified = {executablePath: launch.prefix[0] || launch.command, version: result.stdout.trim(), dynamicTools: dynamicToolsSupported(result.stdout)};
   if (json) console.log(JSON.stringify(verified));
-  else console.log(verified.version, '\nRun codex login on this host before starting.');
+  else console.log(verified.version, verified.dynamicTools ? '' : '\nAide tool plugins require Codex CLI 0.92.0 or newer; text chat remains available.', '\nRun codex login on this host before starting.');
   return verified;
 }
 if (require.main === module) {
