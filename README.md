@@ -87,3 +87,9 @@ The generated plugin entry is self-contained for Aide's entry-only upload valida
 ## Account pool quota (0.4.1)
 
 The plugin declares a data-only provider-support catalog for the local bridge on port8787. A compatible Aide host displays remaining percentages per returned quota window and reset times in the account pool. Credentials stay in Aide and are sent only to the selected bridge origin. This is shared account quota, not USD balance. No inference or earned reset is consumed by reads. The bridge host must support GET /v1/usage (0.3.0+); older hosts remain unavailable until upgraded. Aide requires provider-account-quota-v1 source capability or a future compatible released version. Pricing is not supplied for the bridge.
+
+## API 地址与密钥复制（0.4.3）
+
+插件工作台直接显示 Base URL，并提供复制地址按钮。模型提供商选择 OpenAI 兼容；Aide 后端原生运行通常填 `http://127.0.0.1:8787/v1`，Docker Desktop 通常填 `http://host.docker.internal:8787/v1`。有自定义端口时使用页面读取到的端口；地址已含 `/v1`，不要追加 `/chat/completions`。远程部署需要填写后端可达的宿主地址。
+
+点击“生成密钥”后，现有密钥会复用并临时显示明文 60 秒，可立即隐藏或重新显示。复制按钮先尝试浏览器兼容复制，再尝试 Clipboard API；均失败时选中明文并提示按 ⌘C / Ctrl+C 或右键复制，然后在模型设置粘贴。页面离开时隐藏明文，退出页面时清除显示值。

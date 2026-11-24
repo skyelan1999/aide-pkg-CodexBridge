@@ -75,6 +75,8 @@ const r=require('node:readline').createInterface({input:process.stdin});r.on('li
    await page.waitForFunction(() => !document.querySelector('#key').disabled);
    const key = await page.locator('#bridgeKey').inputValue(); assert(key.length >= 32);
    if(savedKey)assert.equal(key, savedKey); savedKey = key;
+   assert.equal(await page.locator('#bridgeKey').getAttribute('type'), 'text');
+   await page.locator('#hideKey').click();
    assert.equal(await page.locator('#bridgeKey').getAttribute('type'), 'password');
    const secondKey = page.waitForResponse(r=>r.url().endsWith('/api/key'));
    await page.locator('#key').click(); assert.equal((await secondKey).status(), 200);
