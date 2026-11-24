@@ -2,6 +2,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
+const { spawnSync } = require('node:child_process');
 // Resolve npm Windows shims without cmd.exe, PowerShell, or user-controlled shell text.
 function resolveLaunch(command, { platform = process.platform, env = process.env, home = os.homedir() } = {}) {
   if (typeof command !== 'string' || !command.trim() || /[\r\n\0]/.test(command)) throw Error('Invalid Codex executable');
@@ -42,6 +43,37 @@ function resolveLaunch(command, { platform = process.platform, env = process.env
   }
   throw Error('Codex executable not found; install Codex CLI and configure its path');
 }
+function parseCodexVersion(output) {
+  const match = /^codex-cli\s+(\d+)\.(\d+)\.(\d+)(?:-(alpha|beta|rc)\.(\d+))?\s*$/.exec(String(output || '').trim());
+  if (!match) return null;
+  return { version: match[0].replace(/^codex-cli\s+/, '').trim(), base: match.slice(1, 4).map(Number), channel: match[4] || '', stage: Number(match[5] || 0) };
+}
+function dynamicToolsSupported(output) {
+  const value = parseCodexVersion(output);
+  if (!value) return false;
+  const minimum = [0, 92, 0];
+  for (let i = 0; i < minimum.length; i++) {
+    if (value.base[i] !== minimum[i]) return value.base[i] > minimum[i];
+  }
+  if (!value.channel) return true;
+  const rank = { alpha: 1, beta: 2, rc: 3 };
+  return rank[value.channel] > rank.alpha || (value.channel === 'alpha' && value.stage >= 4);
+}
+function assertDynamicToolSupport(launch, run = spawnSync) {
+  const result = run(launch.command, [...launch.prefix, '--version'], { encoding: 'utf8', timeout: 10000, maxBuffer: 65536, windowsHide: true });
+  const parsed = parseCodexVersion(result.stdout);
+  if (result.error || result.status !== 0 || !parsed) {
+    const error = Error('Cannot verify Codex CLI dynamic-tool support; run the bridge diagnostic and configure Codex CLI 0.92.0 or newer');
+    error.status = 400;
+    throw error;
+  }
+  if (!dynamicToolsSupported(result.stdout)) {
+    const error = Error(`Codex CLI ${parsed.version} does not support Aide tool plugins; upgrade to Codex CLI 0.92.0 or newer. Text chat is unchanged.`);
+    error.status = 400;
+    throw error;
+  }
+  return parsed.version;
+}
 function terminate(child) {
   if (!child?.pid) return;
   if (process.platform === 'win32') {
@@ -56,4 +88,4 @@ function terminate(child) {
     child.once('exit', () => clearTimeout(timer));
   }
 }
-module.exports = { resolveLaunch, terminate };
+module.exports = { resolveLaunch, dynamicToolsSupported, assertDynamicToolSupport, terminate };

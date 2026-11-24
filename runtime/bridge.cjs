@@ -9,7 +9,7 @@ const { randomUUID, randomBytes, timingSafeEqual } = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
-const { resolveLaunch, terminate } = require('./launch.cjs');
+const { resolveLaunch, assertDynamicToolSupport, terminate } = require('./launch.cjs');
 const { normalizeRateLimits } = require('../quota.cjs');
 
 class BridgeError extends Error {
@@ -57,6 +57,7 @@ class CodexRPC {
   constructor(command, cwd, proxy) {
     this.pending = new Map(); this.sequence = 0; this.onEvent = () => {};
     const launch = resolveLaunch(command);
+    this.launch = launch;
     this.closed = false;
     this.child = spawn(launch.command, [...launch.prefix, 'app-server', '--listen', 'stdio://'], {
       cwd, detached: process.platform !== 'win32', windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'],
@@ -99,6 +100,7 @@ class CodexRPC {
     });
     this.send({ method: 'initialized', params: {} });
   }
+  assertDynamicTools() { return assertDynamicToolSupport(this.launch); }
   close() { if (this.closed) return; this.closed = true; terminate(this.child); this.fail(new BridgeError('Codex request closed')); }
 }
 
@@ -132,6 +134,7 @@ function validate(body) {
 
 async function complete(rpc, body, tools, onText) {
   await rpc.initialize();
+  if (tools.length && typeof rpc.assertDynamicTools === 'function') rpc.assertDynamicTools();
   let effort = body.reasoning_effort;
   if (effort === 'auto') effort = undefined;
   if (effort === 'off') {

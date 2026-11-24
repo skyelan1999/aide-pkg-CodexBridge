@@ -20,6 +20,6 @@ test('explicit paths never fall back and PATH takes precedence over discovery',t
 test('doctor JSON verifies only a synthetic CLI and preserves configuration on failure',t=>{
  const home=makeHome(t),manage=path.join(home,'manage.cjs'),config=path.join(home,'config.json'),fake=path.join(home,'synthetic codex.cjs');fs.copyFileSync(path.resolve('manage.cjs'),manage);fs.mkdirSync(path.join(home,'runtime'));fs.copyFileSync(path.resolve('runtime/launch.cjs'),path.join(home,'runtime/launch.cjs'));cli(fake);
  const original=JSON.stringify({codex:fake,host:'127.0.0.1',port:8787,proxy:'synthetic-proxy',concurrency:10,marker:'preserve'});fs.writeFileSync(config,original);
- let result=spawnSync(process.execPath,[manage,'doctor','--json'],{encoding:'utf8',env:{PATH:''}});assert.equal(result.status,0,result.stderr);assert.deepEqual(JSON.parse(result.stdout),{executablePath:fake,version:'codex-cli 0.0.0-fixture'});assert.equal(fs.readFileSync(config,'utf8'),original);
+ let result=spawnSync(process.execPath,[manage,'doctor','--json'],{encoding:'utf8',env:{PATH:''}});assert.equal(result.status,0,result.stderr);assert.deepEqual(JSON.parse(result.stdout),{executablePath:fake,version:'codex-cli 0.0.0-fixture',dynamicTools:false});assert.equal(fs.readFileSync(config,'utf8'),original);
  cli(fake,"console.log('unexpected tool 1.0')");result=spawnSync(process.execPath,[manage,'doctor','--json'],{encoding:'utf8'});assert.equal(result.status,1);assert.equal(fs.readFileSync(config,'utf8'),original);
 });
